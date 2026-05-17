@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
@@ -21,14 +21,14 @@ export default function AdminLogin() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       })
 
       if (res.ok) {
         router.push('/admin/dashboard')
       } else {
         const { error: msg } = await res.json()
-        setError(msg || 'Invalid email or password')
+        setError(msg || 'Invalid username or password')
         setLoading(false)
       }
     } catch {
@@ -54,10 +54,10 @@ export default function AdminLogin() {
           {/* Form */}
           <form onSubmit={handleLogin} style={{ padding: '28px 32px 32px' }}>
             <div style={{ marginBottom: 18 }}>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Email</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Username</label>
               <input
-                type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                placeholder="admin@namastenomads.in"
+                type="text" value={username} onChange={e => setUsername(e.target.value)} required
+                placeholder="admin"
                 style={{
                   width: '100%', padding: '11px 14px', borderRadius: 12,
                   border: '1.5px solid #e5e7eb', fontSize: 14, color: '#111',

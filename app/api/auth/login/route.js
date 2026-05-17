@@ -1,15 +1,15 @@
 import { cookies } from 'next/headers'
 import { signJWT, tokenCookieOptions, verifyPassword } from '@/lib/auth'
-import { getUserByEmail } from '@/lib/db'
+import { getUserByUsername } from '@/lib/db'
 
 export async function POST(request) {
-  const { email, password } = await request.json()
+  const { username, password } = await request.json()
 
-  if (!email || !password) {
+  if (!username || !password) {
     return Response.json({ error: 'Invalid credentials' }, { status: 401 })
   }
 
-  const user = await getUserByEmail(email)
+  const user = await getUserByUsername(username)
   if (!user) {
     return Response.json({ error: 'Invalid credentials' }, { status: 401 })
   }
@@ -19,7 +19,7 @@ export async function POST(request) {
     return Response.json({ error: 'Invalid credentials' }, { status: 401 })
   }
 
-  const token = await signJWT({ email: user.email, role: user.role })
+  const token = await signJWT({ username: user.username, role: user.role })
   const cookieStore = await cookies()
   const opts = tokenCookieOptions(token)
   cookieStore.set(opts.name, opts.value, opts)

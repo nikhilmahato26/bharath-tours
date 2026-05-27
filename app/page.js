@@ -181,7 +181,7 @@ export default function HomePage() {
             </div>
             <div style={{ position: 'relative' }}>
               <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', aspectRatio: '1/1', maxWidth: 480, margin: '0 auto' }}>
-                <img src="https://images.unsplash.com/photo-1585394365777-e81a5f5bf68a?w=800&q=80" alt="Kerala" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src="https://images.unsplash.com/photo-1589983846997-04788035bc83?q=80" alt="Kerala" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ position: 'absolute', bottom: -16, left: -16, background: '#fff', borderRadius: 16, boxShadow: '0 8px 30px rgba(0,0,0,0.15)', padding: '16px 20px' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: '#e8520a' }}>500+</div>

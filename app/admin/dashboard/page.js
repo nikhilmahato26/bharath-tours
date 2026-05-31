@@ -91,7 +91,7 @@ export default function Dashboard() {
   const [destSaving, setDestSaving] = useState(false)
   const [editDestId, setEditDestId] = useState(null)
   const [editDestForm, setEditDestForm] = useState({ color: '#e8520a', image_url: '', description: '', emoji: '📍' })
-  const [settingsForm, setSettingsForm] = useState({ phone: '', whatsapp: '', email: '', email2: '', banner_days: '30', admin_recovery_email: '' })
+  const [settingsForm, setSettingsForm] = useState({ phone: '', whatsapp: '', email: '', email2: '', banner_days: '30', admin_recovery_email: '', min_dest_packages: '1' })
   const [settingsSaving, setSettingsSaving] = useState(false)
 
   const fetchPackages = useCallback(async () => {
@@ -148,7 +148,7 @@ export default function Dashboard() {
     if (section === 'agencies') fetchAgencies()
     if (section === 'settings') {
       let ignore = false
-      fetch('/api/settings').then(r => r.ok ? r.json() : null).then(s => { if (!ignore && s) setSettingsForm({ phone: s.phone || '', whatsapp: s.whatsapp || '', email: s.email || '', email2: s.email2 || '', banner_days: s.banner_days || '30', admin_recovery_email: s.admin_recovery_email || '' }) }).catch(() => {})
+      fetch('/api/settings').then(r => r.ok ? r.json() : null).then(s => { if (!ignore && s) setSettingsForm({ phone: s.phone || '', whatsapp: s.whatsapp || '', email: s.email || '', email2: s.email2 || '', banner_days: s.banner_days || '30', admin_recovery_email: s.admin_recovery_email || '', min_dest_packages: s.min_dest_packages || '1' }) }).catch(() => {})
       return () => { ignore = true }
     }
   }, [section, fetchEnquiries, fetchAgencies])
@@ -352,6 +352,7 @@ export default function Dashboard() {
         email2: settingsForm.email2.trim(),
         banner_days: String(Math.max(1, parseInt(settingsForm.banner_days) || 30)),
         admin_recovery_email: settingsForm.admin_recovery_email.trim(),
+        min_dest_packages: String(Math.max(0, parseInt(settingsForm.min_dest_packages) || 1)),
       }
       const res = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error()
@@ -898,6 +899,33 @@ export default function Dashboard() {
               </div>
 
               {/* Banner Duration */}
+              {/* Destination Visibility */}
+              <div style={{ ...S.card, padding: '22px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#f0ebe1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <MapPin size={15} style={{ color: '#e8520a' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>Destination Visibility</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>Minimum packages required to show a destination on the customer site</div>
+                  </div>
+                </div>
+                <label style={S.label}>Minimum Packages</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <input
+                    type="number" min="0" max="99"
+                    value={settingsForm.min_dest_packages}
+                    onChange={e => setSettingsForm(s => ({ ...s, min_dest_packages: e.target.value }))}
+                    style={{ ...S.input, maxWidth: 90 }}
+                  />
+                  <span style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+                    {parseInt(settingsForm.min_dest_packages) === 0
+                      ? 'Show all destinations even with 0 packages'
+                      : `Hide destinations with fewer than ${settingsForm.min_dest_packages} package${parseInt(settingsForm.min_dest_packages) !== 1 ? 's' : ''}`}
+                  </span>
+                </div>
+              </div>
+
               {/* Admin Recovery Email */}
               <div style={{ ...S.card, padding: '22px 24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>

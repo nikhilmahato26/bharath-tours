@@ -5,7 +5,7 @@ import HeroSlider from '@/components/HeroSlider'
 import PackageCard from '@/components/PackageCard'
 import Footer from '@/components/Footer'
 import { usePackages } from '@/hooks/usePackages'
-import { usePhone, useWhatsapp, useEmail, useEmail2 } from '@/hooks/useSettings'
+import { usePhone, useWhatsapp, useEmail, useEmail2, useSettings } from '@/hooks/useSettings'
 import {
   Phone, MessageCircle, MapPin, Mail, Star, Shield, Clock, Users,
   Building2, ArrowRight, CheckCircle, ChevronDown,
@@ -29,6 +29,8 @@ export default function HomePage() {
   const whatsapp = useWhatsapp()
   const email = useEmail()
   const email2 = useEmail2()
+  const settings = useSettings()
+  const minPkgs = Math.max(0, parseInt(settings.min_dest_packages ?? '1', 10) || 1)
 
   useEffect(() => {
     fetch('/api/destinations')
@@ -38,7 +40,7 @@ export default function HomePage() {
   }, [])
 
   const visibleDestinations = destinations.filter(dest =>
-    packages.some(p => p.destination === dest.name)
+    packages.filter(p => p.destination === dest.name).length >= minPkgs
   )
 
   const shown = packages.filter(p => {

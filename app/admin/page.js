@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
+import Link from 'next/link'
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('')
@@ -107,6 +108,11 @@ export default function AdminLogin() {
                 : <><LogIn size={16} /> Sign In</>
               }
             </button>
+            <div style={{ textAlign: 'center', marginTop: 14 }}>
+              <Link href="/admin/forgot-password" style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'none', fontWeight: 600 }}>
+                Forgot password?
+              </Link>
+            </div>
           </form>
         </div>
       </div>

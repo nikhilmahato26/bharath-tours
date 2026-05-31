@@ -5,15 +5,16 @@ import HeroSlider from '@/components/HeroSlider'
 import PackageCard from '@/components/PackageCard'
 import Footer from '@/components/Footer'
 import { usePackages } from '@/hooks/usePackages'
-import { usePhone } from '@/hooks/useSettings'
+import { usePhone, useWhatsapp, useEmail, useEmail2 } from '@/hooks/useSettings'
 import {
   Phone, MessageCircle, MapPin, Mail, Star, Shield, Clock, Users,
-  Building2, ArrowRight, CheckCircle,
+  Building2, ArrowRight, CheckCircle, ChevronDown,
 } from 'lucide-react'
 import Link from 'next/link'
 
 const CATEGORY_TABS = [
   { value: 'all',      label: 'All Packages' },
+  { value: 'package',  label: 'Packages' },
   { value: 'group',    label: 'Group Packages' },
   { value: 'homestay', label: 'Home Stays' },
   { value: 'other',    label: 'Other' },
@@ -25,6 +26,9 @@ export default function HomePage() {
   const [destinations, setDestinations] = useState([])
   const { packages } = usePackages()
   const phone = usePhone()
+  const whatsapp = useWhatsapp()
+  const email = useEmail()
+  const email2 = useEmail2()
 
   useEffect(() => {
     fetch('/api/destinations')
@@ -32,6 +36,10 @@ export default function HomePage() {
       .then(setDestinations)
       .catch(() => {})
   }, [])
+
+  const visibleDestinations = destinations.filter(dest =>
+    packages.some(p => p.destination === dest.name)
+  )
 
   const shown = packages.filter(p => {
     const matchCat = activeCategory === 'all' || p.category === activeCategory
@@ -52,16 +60,16 @@ export default function HomePage() {
               Where We Go
             </p>
             <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#111', marginBottom: 12 }}>
-              Kerala&apos;s Most Beautiful <span style={{ color: '#e8520a' }}>Destinations</span>
+              Our Most Beautiful <span style={{ color: '#e8520a' }}>Destinations</span>
             </h2>
             <p style={{ color: '#6b7280', maxWidth: 500, margin: '0 auto', lineHeight: 1.6 }}>
               Handpicked spots across God&apos;s Own Country — from misty hill stations to sun-lit backwaters.
             </p>
           </div>
 
-          {destinations.length > 0 && (
+          {visibleDestinations.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
-              {destinations.map(dest => (
+              {visibleDestinations.map(dest => (
                 <button
                   key={dest.id}
                   onClick={() => {
@@ -97,18 +105,18 @@ export default function HomePage() {
               Curated Experiences
             </p>
             <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#111', marginBottom: 12 }}>
-              Our <span style={{ color: '#e8520a' }}>Kerala Packages</span>
+              Our <span style={{ color: '#e8520a' }}>Packages</span>
             </h2>
             <p style={{ color: '#9ca3af', maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.6 }}>
               Every package includes a day-wise itinerary, accommodation & transfers.
             </p>
 
             {/* Category tabs */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
               {CATEGORY_TABS.map(tab => (
                 <button
                   key={tab.value}
-                  onClick={() => setActiveCategory(tab.value)}
+                  onClick={() => { setActiveCategory(tab.value); setActiveDest('all') }}
                   style={{
                     padding: '8px 20px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.2s',
                     background: activeCategory === tab.value ? 'linear-gradient(135deg,#e8520a,#c93d00)' : '#f5f0e8',
@@ -119,19 +127,31 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Destination sub-filter */}
-            {/* {destinations.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 6 }}>
-                <button onClick={() => setActiveDest('all')} style={{ padding: '5px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600, border: `1.5px solid ${activeDest === 'all' ? '#e8520a' : '#e5e7eb'}`, cursor: 'pointer', background: 'none', color: activeDest === 'all' ? '#e8520a' : '#9ca3af', transition: 'all 0.2s' }}>
-                  All Destinations
-                </button>
-                {destinations.map(d => (
-                  <button key={d.id} onClick={() => setActiveDest(d.name)} style={{ padding: '5px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600, border: `1.5px solid ${activeDest === d.name ? d.color : '#e5e7eb'}`, cursor: 'pointer', background: 'none', color: activeDest === d.name ? d.color : '#9ca3af', transition: 'all 0.2s' }}>
-                    {d.emoji} {d.name}
-                  </button>
-                ))}
+            {/* Destination dropdown filter */}
+            {visibleDestinations.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                  <MapPin size={13} style={{ position: 'absolute', left: 12, color: activeDest !== 'all' ? '#e8520a' : '#9ca3af', pointerEvents: 'none', zIndex: 1 }} />
+                  <select
+                    value={activeDest}
+                    onChange={e => setActiveDest(e.target.value)}
+                    style={{
+                      padding: '8px 36px 8px 30px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      border: `1.5px solid ${activeDest !== 'all' ? '#e8520a' : '#e5e7eb'}`,
+                      background: activeDest !== 'all' ? '#fff5ef' : '#f5f0e8',
+                      color: activeDest !== 'all' ? '#e8520a' : '#555',
+                      appearance: 'none', outline: 'none',
+                    }}
+                  >
+                    <option value="all">All Destinations</option>
+                    {visibleDestinations.map(d => (
+                      <option key={d.id} value={d.name}>{d.emoji} {d.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={13} style={{ position: 'absolute', right: 12, color: activeDest !== 'all' ? '#e8520a' : '#9ca3af', pointerEvents: 'none' }} />
+                </div>
               </div>
-            )} */}
+            )}
           </div>
 
           {shown.length === 0 ? (
@@ -276,21 +296,29 @@ export default function HomePage() {
             <a href={`tel:+${phone}`} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 999, background: 'linear-gradient(135deg,#fbbf24,#f59e0b)', color: '#1c1c1c', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
               <Phone size={18} /> Call Us Now
             </a>
-            <a href={`https://wa.me/${phone}?text=Hi! I want to book a Kerala trip`} target="_blank" rel="noopener noreferrer"
+            <a href={`https://wa.me/${whatsapp}?text=Hi! I want to book a Kerala trip`} target="_blank" rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 999, background: 'linear-gradient(135deg,#25d366,#128c7e)', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
               <MessageCircle size={18} /> WhatsApp Us
             </a>
-            <a href="mailto:jerinantony.fg@gmail.com"
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 999, background: 'rgba(255,255,255,0.15)', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
-              <Mail size={18} /> Email Us
-            </a>
+            {email && (
+              <a href={`mailto:${email}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 999, background: 'rgba(255,255,255,0.15)', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
+                <Mail size={18} /> Email Us
+              </a>
+            )}
+            {email2 && (
+              <a href={`mailto:${email2}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 999, background: 'rgba(255,255,255,0.15)', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
+                <Mail size={18} /> Email Us (2)
+              </a>
+            )}
           </div>
         </div>
       </section>
 
       <Footer />
 
-      <a href={`https://wa.me/${phone}?text=Hi! I want to book a Kerala trip!`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"
+      <a href={`https://wa.me/${whatsapp}?text=Hi! I want to book a Kerala trip!`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"
         style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 999, width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,#25d366,#128c7e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 8px 24px rgba(37,211,102,0.5)', textDecoration: 'none' }}>
         <MessageCircle size={26} />
       </a>

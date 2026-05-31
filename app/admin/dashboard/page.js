@@ -13,6 +13,16 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 
 function fmt(n) { return '₹' + Number(n).toLocaleString('en-IN') }
+
+const PKG_PREFIX = { package: 'PKG', group: 'GPKG', homestay: 'HS', other: 'OTH' }
+const CONFORMING_ID = /^(PKG|GPKG|HS|OTH)-\d+$/
+function generatePkgId(category, existingPackages) {
+  const prefix = PKG_PREFIX[category] || 'PKG'
+  const nums = existingPackages
+    .filter(p => p.id && p.id.startsWith(prefix + '-'))
+    .map(p => { const m = p.id.match(/(\d+)$/); return m ? parseInt(m[1], 10) : 0 })
+  return `${prefix}-${nums.length > 0 ? Math.max(...nums) + 1 : 101}`
+}
 function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }
 
 const CATEGORIES = [
@@ -68,6 +78,8 @@ export default function Dashboard() {
   const [editId, setEditId] = useState(null)
   const [deleteId, setDeleteId] = useState(null)
   const [confirm, setConfirm] = useState(null)
+  const [featureModal, setFeatureModal] = useState(null) // { id, order } | null
+  const [featureDays, setFeatureDays] = useState('30')
   const [tab, setTab] = useState('basic')
   const [saving, setSaving] = useState(false)
   const [actionLoading, setActionLoading] = useState(null)
@@ -79,13 +91,27 @@ export default function Dashboard() {
   const [destSaving, setDestSaving] = useState(false)
   const [editDestId, setEditDestId] = useState(null)
   const [editDestForm, setEditDestForm] = useState({ color: '#e8520a', image_url: '', description: '', emoji: '📍' })
-  const [settingsForm, setSettingsForm] = useState({ phone: '' })
+  const [settingsForm, setSettingsForm] = useState({ phone: '', whatsapp: '', email: '', email2: '', banner_days: '30', admin_recovery_email: '' })
   const [settingsSaving, setSettingsSaving] = useState(false)
 
   const fetchPackages = useCallback(async () => {
     try {
       const res = await fetch('/api/packages/admin')
-      if (res.ok) setAllPackages(await res.json())
+      if (res.ok) {
+        const pkgs = await res.json()
+        setAllPackages(pkgs)
+        // Auto-rename any old-format IDs silently
+        if (pkgs.some(p => !CONFORMING_ID.test(p.id))) {
+          fetch('/api/packages/migrate-ids', { method: 'POST' })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+              if (data?.renamed?.length > 0) {
+                fetch('/api/packages/admin').then(r => r.ok ? r.json() : null).then(p => { if (p) setAllPackages(p) }).catch(() => {})
+              }
+            })
+            .catch(() => {})
+        }
+      }
     } catch {}
     setLoaded(true)
   }, [])
@@ -122,7 +148,7 @@ export default function Dashboard() {
     if (section === 'agencies') fetchAgencies()
     if (section === 'settings') {
       let ignore = false
-      fetch('/api/settings').then(r => r.ok ? r.json() : null).then(s => { if (!ignore && s) setSettingsForm({ phone: s.phone || '' }) }).catch(() => {})
+      fetch('/api/settings').then(r => r.ok ? r.json() : null).then(s => { if (!ignore && s) setSettingsForm({ phone: s.phone || '', whatsapp: s.whatsapp || '', email: s.email || '', email2: s.email2 || '', banner_days: s.banner_days || '30', admin_recovery_email: s.admin_recovery_email || '' }) }).catch(() => {})
       return () => { ignore = true }
     }
   }, [section, fetchEnquiries, fetchAgencies])
@@ -138,7 +164,7 @@ export default function Dashboard() {
 
   const openAdd = () => {
     const first = destinations[0]
-    const pkgId = 'GKT-' + Math.random().toString(36).slice(2, 8).toUpperCase()
+    const pkgId = generatePkgId('package', allPackages)
     setForm({ ...EMPTY_PKG, id: pkgId, destination: first?.name ?? '', badgeColor: first?.color ?? '#2e9e7a' })
     setEditId(null); setTab('basic'); setModal('form')
   }
@@ -212,18 +238,25 @@ export default function Dashboard() {
     }
   }
 
-  const handleFeature = async (id, featured, order) => {
+  const handleFeature = async (id, featured, order, days = 30) => {
     setActionLoading(`feature-${id}`)
     try {
-      const res = await fetch(`/api/packages/${id}/feature`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ featured, order }) })
+      const res = await fetch(`/api/packages/${id}/feature`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ featured, order, days: Number(days) }) })
       if (!res.ok) throw new Error()
       await fetchPackages()
-      toast.success(featured ? 'Package added to hero!' : 'Removed from hero')
+      toast.success(featured ? `Added to hero for ${days} day${days != 1 ? 's' : ''}!` : 'Removed from hero')
     } catch {
       toast.error('Failed to update featured status')
     } finally {
       setActionLoading(null)
     }
+  }
+
+  const handleFeatureConfirm = async () => {
+    if (!featureModal) return
+    const days = Math.max(1, parseInt(featureDays) || 30)
+    setFeatureModal(null)
+    await handleFeature(featureModal.id, true, featureModal.order, days)
   }
 
   // ─── Agency handlers ───────────────────────────────────────────────────────
@@ -312,7 +345,15 @@ export default function Dashboard() {
     if (!settingsForm.phone.trim()) { toast.error('Phone number is required'); return }
     setSettingsSaving(true)
     try {
-      const res = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: settingsForm.phone.trim().replace(/\D/g, '') }) })
+      const payload = {
+        phone: settingsForm.phone.trim().replace(/\D/g, ''),
+        whatsapp: (settingsForm.whatsapp.trim() || settingsForm.phone.trim()).replace(/\D/g, ''),
+        email: settingsForm.email.trim(),
+        email2: settingsForm.email2.trim(),
+        banner_days: String(Math.max(1, parseInt(settingsForm.banner_days) || 30)),
+        admin_recovery_email: settingsForm.admin_recovery_email.trim(),
+      }
+      const res = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!res.ok) throw new Error()
       invalidateSettingsCache()
       toast.success('Settings saved!')
@@ -475,7 +516,7 @@ export default function Dashboard() {
                 <button onClick={() => { setNewDest({ name: '', color: '#e8520a', image_url: '', description: '', emoji: '📍' }); setEditDestId(null); setModal('destination') }} style={S.btn('#f3f4f6', '#555')}>
                   <MapPin size={13} /> Destinations
                 </button>
-                <button onClick={openAdd} style={{ padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#e8520a,#c93d00)', color: '#fff', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+<button onClick={openAdd} style={{ padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#e8520a,#c93d00)', color: '#fff', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Plus size={16} /> Add Package
                 </button>
               </div>
@@ -483,13 +524,26 @@ export default function Dashboard() {
 
             {/* Hero section manager */}
             {featuredPackages.length > 0 && (
-              <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#0f172a)', borderRadius: 16, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <Star size={16} style={{ color: '#fbbf24', flexShrink: 0 }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Hero Section ({featuredPackages.length} featured):</span>
+              <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#0f172a)', borderRadius: 16, padding: '16px 20px', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <Star size={15} style={{ color: '#fbbf24', flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>Hero Section ({featuredPackages.length} active)</span>
+                </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {featuredPackages.map(p => (
-                    <span key={p.id} style={{ fontSize: 12, color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '3px 10px', borderRadius: 999, fontWeight: 600 }}>{p.title}</span>
-                  ))}
+                  {featuredPackages.map(p => {
+                    const expiresAt = p.featuredAt ? new Date(new Date(p.featuredAt).getTime() + p.featuredDays * 86400000) : null
+                    const daysLeft = expiresAt ? Math.ceil((expiresAt - Date.now()) / 86400000) : null
+                    return (
+                      <div key={p.id} style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 10, padding: '6px 12px' }}>
+                        <div style={{ fontSize: 12, color: '#fbbf24', fontWeight: 700 }}>{p.title}</div>
+                        {daysLeft !== null && (
+                          <div style={{ fontSize: 10, color: daysLeft <= 3 ? '#f87171' : 'rgba(255,255,255,0.5)', marginTop: 2, fontWeight: 600 }}>
+                            {daysLeft > 0 ? `${daysLeft}d left` : 'Expired'}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -561,16 +615,30 @@ export default function Dashboard() {
                             </td>
                             <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                               {pkg.status === 'approved' && (
-                                <button
-                                  onClick={() => handleFeature(pkg.id, !pkg.featured, pkg.featured ? 0 : featuredPackages.length)}
-                                  disabled={actionLoading === `feature-${pkg.id}`}
-                                  title={pkg.featured ? 'Remove from hero' : 'Push to hero'}
-                                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${pkg.featured ? '#fde68a' : '#e5e7eb'}`, background: pkg.featured ? '#fffbeb' : 'none', cursor: actionLoading === `feature-${pkg.id}` ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                                  {actionLoading === `feature-${pkg.id}`
-                                    ? <span style={{ width: 10, height: 10, border: '2px solid #fde68a', borderTop: '2px solid #f59e0b', borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} />
-                                    : <Star size={14} style={{ color: pkg.featured ? '#f59e0b' : '#d1d5db', fill: pkg.featured ? '#f59e0b' : 'none' }} />
-                                  }
-                                </button>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                                  <button
+                                    onClick={() => {
+                                      if (pkg.featured) {
+                                        handleFeature(pkg.id, false, 0)
+                                      } else {
+                                        setFeatureDays('30')
+                                        setFeatureModal({ id: pkg.id, order: featuredPackages.length })
+                                      }
+                                    }}
+                                    disabled={actionLoading === `feature-${pkg.id}`}
+                                    title={pkg.featured ? 'Remove from hero' : 'Push to hero'}
+                                    style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${pkg.featured ? '#fde68a' : '#e5e7eb'}`, background: pkg.featured ? '#fffbeb' : 'none', cursor: actionLoading === `feature-${pkg.id}` ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {actionLoading === `feature-${pkg.id}`
+                                      ? <span style={{ width: 10, height: 10, border: '2px solid #fde68a', borderTop: '2px solid #f59e0b', borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} />
+                                      : <Star size={14} style={{ color: pkg.featured ? '#f59e0b' : '#d1d5db', fill: pkg.featured ? '#f59e0b' : 'none' }} />
+                                    }
+                                  </button>
+                                  {pkg.featured && pkg.featuredAt && (
+                                    <span style={{ fontSize: 9, color: '#f59e0b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                      {pkg.featuredDays}d
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </td>
                             <td style={{ padding: '12px 16px' }}>
@@ -646,12 +714,16 @@ export default function Dashboard() {
                             </div>
                             <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, color: sc.color, background: sc.bg }}>{sc.label}</span>
                           </div>
-                          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: agency.description ? 8 : 0 }}>
+                          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: agency.description ? 8 : 0, alignItems: 'center' }}>
                             <a href={`mailto:${agency.email}`} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#374151', textDecoration: 'none' }}>
                               <Mail size={13} style={{ color: '#6b7280' }} /> {agency.email}
                             </a>
                             <a href={`tel:${agency.phone}`} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#374151', textDecoration: 'none' }}>
                               <Phone size={13} style={{ color: '#e8520a' }} /> {agency.phone}
+                            </a>
+                            <a href={`https://wa.me/${agency.phone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#25d366', textDecoration: 'none', padding: '4px 12px', borderRadius: 999, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                              <MessageCircle size={12} /> WhatsApp
                             </a>
                             {agency.website && (
                               <a href={agency.website} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#2e3da8', textDecoration: 'none' }}>
@@ -737,29 +809,121 @@ export default function Dashboard() {
         {/* ── Settings ── */}
         {section === 'settings' && (
           <>
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 24 }}>
               <h2 style={{ fontWeight: 700, fontSize: 18, color: '#111', margin: 0 }}>Business Settings</h2>
               <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>Changes are reflected instantly across the website.</p>
             </div>
-            <div style={{ maxWidth: 540 }}>
-              <div style={{ ...S.card, padding: '24px' }}>
-                <h3 style={{ fontWeight: 700, fontSize: 15, color: '#111', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Phone size={16} style={{ color: '#e8520a' }} /> Contact Number
-                </h3>
-                <label style={S.label}>WhatsApp & Call Number (with country code, no +)</label>
-                <input value={settingsForm.phone} onChange={e => setSettingsForm(s => ({ ...s, phone: e.target.value }))} style={{ ...S.input, marginBottom: 8 }} placeholder="e.g. 918062179246" />
-                <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 16 }}>Format: country code + number (91 + 10-digit mobile)</p>
-                {settingsForm.phone && (
-                  <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-                    <a href={`tel:+${settingsForm.phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#e8520a', textDecoration: 'none', padding: '6px 14px', borderRadius: 999, border: '1px solid #fbd0b5', background: '#fff5ef' }}><Phone size={13} /> Preview call</a>
-                    <a href={`https://wa.me/${settingsForm.phone}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#25d366', textDecoration: 'none', padding: '6px 14px', borderRadius: 999, border: '1px solid #bbf7d0', background: '#f0fdf4' }}><MessageCircle size={13} /> Preview WA</a>
+            <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              {/* Phone */}
+              <div style={{ ...S.card, padding: '22px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#fff5ef', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Phone size={15} style={{ color: '#e8520a' }} />
                   </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>Phone Number</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>Used for the "Call Us" button across the site</div>
+                  </div>
+                </div>
+                <label style={S.label}>Number (with country code, no +)</label>
+                <input value={settingsForm.phone} onChange={e => setSettingsForm(s => ({ ...s, phone: e.target.value }))} style={{ ...S.input, marginBottom: 6 }} placeholder="e.g. 918062179246" />
+                <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 12px' }}>Format: 91 + 10-digit mobile (e.g. 919876543210)</p>
+                {settingsForm.phone.replace(/\D/g,'') && (
+                  <a href={`tel:+${settingsForm.phone.replace(/\D/g,'')}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#e8520a', textDecoration: 'none', padding: '5px 12px', borderRadius: 999, border: '1px solid #fbd0b5', background: '#fff5ef' }}>
+                    <Phone size={12} /> Preview call link
+                  </a>
                 )}
-                <button onClick={handleSaveSettings} disabled={settingsSaving}
-                  style={{ padding: '10px 24px', borderRadius: 10, border: 'none', cursor: settingsSaving ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg,#e8520a,#c93d00)', color: '#fff', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, opacity: settingsSaving ? 0.7 : 1 }}>
-                  {settingsSaving ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} /> Saving...</> : <><Check size={14} /> Save Settings</>}
-                </button>
               </div>
+
+              {/* WhatsApp */}
+              <div style={{ ...S.card, padding: '22px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <MessageCircle size={15} style={{ color: '#25d366' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>WhatsApp Number</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>Used for all WhatsApp chat & enquiry buttons</div>
+                  </div>
+                </div>
+                <label style={S.label}>WhatsApp Number (with country code, no +)</label>
+                <input value={settingsForm.whatsapp} onChange={e => setSettingsForm(s => ({ ...s, whatsapp: e.target.value }))} style={{ ...S.input, marginBottom: 6 }} placeholder="e.g. 918062179246 (leave blank to use phone number)" />
+                <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 12px' }}>Leave blank to use the same number as Phone</p>
+                {(settingsForm.whatsapp || settingsForm.phone).replace(/\D/g,'') && (
+                  <a href={`https://wa.me/${(settingsForm.whatsapp || settingsForm.phone).replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#25d366', textDecoration: 'none', padding: '5px 12px', borderRadius: 999, border: '1px solid #bbf7d0', background: '#f0fdf4' }}>
+                    <MessageCircle size={12} /> Preview WhatsApp link
+                  </a>
+                )}
+              </div>
+
+              {/* Email */}
+              <div style={{ ...S.card, padding: '22px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#eff1ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Mail size={15} style={{ color: '#2e3da8' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>Business Email</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>Shown on the contact section & enquiry responses</div>
+                  </div>
+                </div>
+                <label style={S.label}>Email Address</label>
+                <input type="email" value={settingsForm.email} onChange={e => setSettingsForm(s => ({ ...s, email: e.target.value }))} style={{ ...S.input, marginBottom: 6 }} placeholder="e.g. hello@greenkeralatrips.com" />
+                {settingsForm.email.trim() && (
+                  <a href={`mailto:${settingsForm.email.trim()}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#2e3da8', textDecoration: 'none', padding: '5px 12px', borderRadius: 999, border: '1px solid #c7d0ff', background: '#eff1ff', marginTop: 6 }}>
+                    <Mail size={12} /> Preview email link
+                  </a>
+                )}
+              </div>
+
+              {/* Secondary Email */}
+              <div style={{ ...S.card, padding: '22px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Mail size={15} style={{ color: '#22c55e' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>Secondary Email <span style={{ fontSize: 11, fontWeight: 500, color: '#9ca3af' }}>(optional)</span></div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>A second contact email shown on the website</div>
+                  </div>
+                </div>
+                <label style={S.label}>Secondary Email Address</label>
+                <input type="email" value={settingsForm.email2} onChange={e => setSettingsForm(s => ({ ...s, email2: e.target.value }))} style={{ ...S.input, marginBottom: 6 }} placeholder="e.g. support@greenkeralatrips.com" />
+                {settingsForm.email2.trim() && (
+                  <a href={`mailto:${settingsForm.email2.trim()}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#22c55e', textDecoration: 'none', padding: '5px 12px', borderRadius: 999, border: '1px solid #bbf7d0', background: '#f0fdf4', marginTop: 6 }}>
+                    <Mail size={12} /> Preview email link
+                  </a>
+                )}
+              </div>
+
+              {/* Banner Duration */}
+              {/* Admin Recovery Email */}
+              <div style={{ ...S.card, padding: '22px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Mail size={15} style={{ color: '#d97706' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>Admin Recovery Email</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>OTP is sent here when admin uses "Forgot Password"</div>
+                  </div>
+                </div>
+                <label style={S.label}>Recovery Email Address</label>
+                <input
+                  type="email"
+                  value={settingsForm.admin_recovery_email}
+                  onChange={e => setSettingsForm(s => ({ ...s, admin_recovery_email: e.target.value }))}
+                  style={{ ...S.input, marginBottom: 6 }}
+                  placeholder="e.g. admin@greenkeralatrips.com"
+                />
+                <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>Set this before you need it — required for password recovery to work.</p>
+              </div>
+
+              <button onClick={handleSaveSettings} disabled={settingsSaving}
+                style={{ alignSelf: 'flex-start', padding: '11px 28px', borderRadius: 10, border: 'none', cursor: settingsSaving ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg,#e8520a,#c93d00)', color: '#fff', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 7, opacity: settingsSaving ? 0.7 : 1 }}>
+                {settingsSaving ? <><span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} /> Saving...</> : <><Check size={15} /> Save All Settings</>}
+              </button>
             </div>
           </>
         )}
@@ -781,6 +945,16 @@ export default function Dashboard() {
             <div style={{ padding: 20, maxHeight: '60vh', overflowY: 'auto' }}>
               {tab === 'basic' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={S.label}>Package ID</label>
+                    <input value={form.id} readOnly style={{ ...S.input, background: '#f0f0f0', color: '#6b7280', fontFamily: 'monospace', fontSize: 13, letterSpacing: '0.04em', cursor: 'default' }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                    <div style={{ fontSize: 11, color: '#9ca3af', lineHeight: 1.5, paddingBottom: 10 }}>
+                      Auto-generated based on category.<br />
+                      <span style={{ color: '#6b7280' }}>PKG · GPKG · HS · OTH</span>
+                    </div>
+                  </div>
                   <div style={{ gridColumn: '1/-1' }}>
                     <label style={S.label}>Title *</label>
                     <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={S.input} placeholder="e.g. Munnar Tea Estate Trek" />
@@ -791,7 +965,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <label style={S.label}>Category *</label>
-                    <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={{ ...S.input, cursor: 'pointer' }}>
+                    <select value={form.category} onChange={e => { const cat = e.target.value; setForm(f => ({ ...f, category: cat, ...(!editId && { id: generatePkgId(cat, allPackages) }) })) }} style={{ ...S.input, cursor: 'pointer' }}>
                       {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
@@ -1032,6 +1206,38 @@ export default function Dashboard() {
               <button onClick={() => { setModal(null); setDeleteId(null) }} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
               <button onClick={handleDelete} disabled={saving} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: 'none', background: '#ef4444', color: '#fff', fontWeight: 700, fontSize: 13, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
                 {saving ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Feature Duration Modal ── */}
+      {featureModal && (
+        <div style={{ ...S.overlay, alignItems: 'center' }} onClick={e => e.target === e.currentTarget && setFeatureModal(null)}>
+          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 360, padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+            <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+              <Star size={24} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+            </div>
+            <h3 style={{ fontWeight: 700, fontSize: 17, color: '#111', marginBottom: 6 }}>Add to Hero Banner</h3>
+            <p style={{ color: '#6b7280', fontSize: 13, lineHeight: 1.6, marginBottom: 20 }}>
+              How many days should this package appear in the hero slider?
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', marginBottom: 24 }}>
+              <input
+                type="number" min="1" max="365"
+                value={featureDays}
+                onChange={e => setFeatureDays(e.target.value)}
+                autoFocus
+                style={{ width: 90, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #fde68a', fontSize: 22, fontWeight: 800, textAlign: 'center', outline: 'none', color: '#111', background: '#fffbeb' }}
+              />
+              <span style={{ fontSize: 15, color: '#6b7280', fontWeight: 600 }}>days</span>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setFeatureModal(null)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleFeatureConfirm} disabled={!featureDays || parseInt(featureDays) < 1} style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: !featureDays || parseInt(featureDays) < 1 ? 'not-allowed' : 'pointer', opacity: !featureDays || parseInt(featureDays) < 1 ? 0.6 : 1 }}>
+                <Star size={13} style={{ display: 'inline', marginRight: 5, fill: '#fff', verticalAlign: 'middle' }} />
+                Add to Hero
               </button>
             </div>
           </div>

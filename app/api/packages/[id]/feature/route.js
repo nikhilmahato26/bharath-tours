@@ -7,9 +7,9 @@ export async function PUT(request, { params }) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const { id } = await params
-  const { featured, order = 0 } = await request.json()
+  const { featured, order = 0, days = 30 } = await request.json()
   try {
-    await togglePackageFeatured(id, Boolean(featured), Number(order))
+    await togglePackageFeatured(id, Boolean(featured), Number(order), Number(days))
     await invalidatePackagesCache()
     return Response.json({ ok: true })
   } catch {

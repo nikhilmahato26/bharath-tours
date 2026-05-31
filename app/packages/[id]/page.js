@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { use } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { usePhone } from '@/hooks/useSettings'
+import { usePhone, useWhatsapp } from '@/hooks/useSettings'
 import { Phone, MessageCircle, Clock, MapPin, Check, X, ChevronDown, ChevronUp, ArrowLeft, Send, User } from 'lucide-react'
 import Link from 'next/link'
 
@@ -43,6 +43,7 @@ export default function PackagePage({ params }) {
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const phone = usePhone()
+  const whatsapp = useWhatsapp()
 
   const [enquiry, setEnquiry] = useState({ name: '', phone: '', email: '', message: '' })
   const [enquiryStatus, setEnquiryStatus] = useState(null) // null | 'sending' | 'sent' | 'error'
@@ -55,9 +56,9 @@ export default function PackagePage({ params }) {
   }, [])
 
   useEffect(() => {
-    fetch('/api/packages')
-      .then(r => r.json())
-      .then(all => setPkg(all.find(p => p.id === id) || null))
+    fetch(`/api/packages/${encodeURIComponent(id)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setPkg(data && !data.error ? data : null))
       .catch(() => setPkg(null))
       .finally(() => setLoading(false))
   }, [id])
@@ -66,6 +67,9 @@ export default function PackagePage({ params }) {
     e.preventDefault()
     if (!enquiry.name.trim() || !enquiry.phone.trim()) return
     setEnquiryStatus('sending')
+    const msgWithId = enquiry.message.trim()
+      ? `${enquiry.message.trim()}\n\nPackage ID: ${pkg.id}`
+      : `Package ID: ${pkg.id}`
     try {
       const res = await fetch('/api/enquiries', {
         method: 'POST',
@@ -74,6 +78,7 @@ export default function PackagePage({ params }) {
           package_id: pkg.id,
           package_title: pkg.title,
           ...enquiry,
+          message: msgWithId,
         }),
       })
       if (res.ok) {
@@ -106,7 +111,7 @@ export default function PackagePage({ params }) {
     </main>
   )
 
-  const waMsg = `Hi! I want to book ${pkg.title} (${pkg.duration}) — ${fmt(pkg.salePrice)}/person`
+  const waMsg = `Hi! I want to book ${pkg.title} (${pkg.id}) — ${pkg.duration} — ${fmt(pkg.salePrice)}/person`
 
   return (
     <main style={{ minHeight: '100vh', background: '#fff' }}>
@@ -173,41 +178,56 @@ export default function PackagePage({ params }) {
             )}
 
             {/* Available Dates — Group Packages */}
-            {pkg.category === 'group' && pkg.availableDates?.length > 0 && (
-              <section style={{ marginBottom: 36 }}>
-                <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: isMobile ? 20 : 24, color: '#111', marginBottom: 16 }}>Available Dates</h2>
-                <div style={{ border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                    <div style={{ padding: '10px 18px', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Available Dates</div>
-                    <div style={{ padding: '10px 18px', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'right' }}>Reserve</div>
-                  </div>
-                  {pkg.availableDates.map((group, gi) => {
-                    const month = groupMonth(group)
-                    const validDates = (group.dates || []).filter(dr => fmtRange(dr))
-                    if (!validDates.length && !month) return null
-                    return (
-                    <div key={gi} style={{ borderBottom: gi < pkg.availableDates.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', padding: '14px 18px', gap: 16 }}>
-                        <div>
-                          {month && <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>{month}</div>}
-                          {validDates.map((dr, di) => (
-                            <div key={di} style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.8 }}>{fmtRange(dr)}</div>
-                          ))}
+            {pkg.category === 'group' && pkg.availableDates?.length > 0 && (() => {
+              // Flatten all date ranges and re-group by actual calendar month
+              const allDates = pkg.availableDates.flatMap(g => (g.dates || []))
+              const validDates = allDates.filter(dr => fmtRange(dr))
+              if (!validDates.length) return null
+
+              const monthMap = {}
+              const monthOrder = []
+              for (const dr of validDates) {
+                const d = typeof dr === 'object' ? dr : { start: '', end: dr || '' }
+                const monthKey = d.start
+                  ? new Date(d.start + 'T00:00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+                  : 'Upcoming'
+                if (!monthMap[monthKey]) { monthMap[monthKey] = []; monthOrder.push(monthKey) }
+                monthMap[monthKey].push(dr)
+              }
+
+              return (
+                <section style={{ marginBottom: 36 }}>
+                  <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: isMobile ? 20 : 24, color: '#111', marginBottom: 16 }}>Available Departures</h2>
+                  <div style={{ border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden' }}>
+                    {monthOrder.map((month, mi) => (
+                      <div key={month} style={{ borderBottom: mi < monthOrder.length - 1 ? '1px solid #e5e7eb' : 'none' }}>
+                        {/* Month header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#fff5ef,#fef3ec)', borderBottom: '1px solid #fbd0b5' }}>
+                          <span style={{ fontSize: 15 }}>📅</span>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: '#c93d00', letterSpacing: '0.03em' }}>{month}</span>
                         </div>
-                        <a
-                          href={`https://wa.me/${phone}?text=${encodeURIComponent(`Hi! I want to reserve ${pkg.title} — ${groupMonth(group) || ''}`)}`}
-                          target="_blank" rel="noopener noreferrer"
-                          style={{ padding: '9px 22px', borderRadius: 999, background: 'linear-gradient(135deg,#2e9e7a,#1e7a5e)', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block' }}
-                        >
-                          Reserve
-                        </a>
+                        {/* Date rows */}
+                        {monthMap[month].map((dr, di) => (
+                          <div key={di} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: di % 2 === 0 ? '#fff' : '#fafafa', borderBottom: di < monthMap[month].length - 1 ? '1px solid #f3f4f6' : 'none', gap: 12 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#2e9e7a', flexShrink: 0 }} />
+                              <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>{fmtRange(dr)}</span>
+                            </div>
+                            <a
+                              href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I want to reserve the following package:\n\nPackage: ${pkg.title}\nPackage ID: ${pkg.id}\nDate: ${fmtRange(dr)}`)}`}
+                              target="_blank" rel="noopener noreferrer"
+                              style={{ padding: '7px 18px', borderRadius: 999, background: 'linear-gradient(135deg,#2e9e7a,#1e7a5e)', color: '#fff', fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
+                            >
+                              Reserve
+                            </a>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    )
-                  })}
-                </div>
-              </section>
-            )}
+                    ))}
+                  </div>
+                </section>
+              )
+            })()}
 
             {/* Itinerary */}
             {pkg.itinerary?.length > 0 && (
@@ -411,7 +431,7 @@ export default function PackagePage({ params }) {
                       <Phone size={16} /> Call to Book
                     </a>
                     <a
-                      href={`https://wa.me/${phone}?text=${encodeURIComponent(waMsg)}`}
+                      href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(waMsg)}`}
                       target="_blank" rel="noopener noreferrer"
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px 0', borderRadius: 999, background: 'linear-gradient(135deg,#25d366,#128c7e)', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
                     >
@@ -446,7 +466,7 @@ export default function PackagePage({ params }) {
             <Phone size={14} /> Call
           </a>
           <a
-            href={`https://wa.me/${phone}?text=${encodeURIComponent(waMsg)}`}
+            href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(waMsg)}`}
             target="_blank" rel="noopener noreferrer"
             style={{ padding: '12px 18px', borderRadius: 999, background: 'linear-gradient(135deg,#25d366,#128c7e)', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
           >

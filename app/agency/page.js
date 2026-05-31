@@ -96,10 +96,15 @@ export default function AgencyLoginPage() {
             }
           </button>
 
-          <p style={{ textAlign: 'center', fontSize: 13, color: '#9ca3af' }}>
-            Not a partner yet?{' '}
-            <Link href="/agency/register" style={{ color: '#e8520a', fontWeight: 600, textDecoration: 'none' }}>Apply to join</Link>
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+            <p style={{ margin: 0, fontSize: 13, color: '#9ca3af' }}>
+              Not a partner yet?{' '}
+              <Link href="/agency/register" style={{ color: '#e8520a', fontWeight: 600, textDecoration: 'none' }}>Apply to join</Link>
+            </p>
+            <Link href="/agency/forgot-password" style={{ fontSize: 13, color: '#6b7280', fontWeight: 600, textDecoration: 'none' }}>
+              Forgot password?
+            </Link>
+          </div>
         </form>
       </div>
     </div>

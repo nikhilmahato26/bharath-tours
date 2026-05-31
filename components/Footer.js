@@ -2,7 +2,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Phone, Mail, MessageCircle, MapPin } from 'lucide-react'
-import { usePhone } from '@/hooks/useSettings'
+import { usePhone, useWhatsapp, useEmail, useEmail2 } from '@/hooks/useSettings'
 
 function IgIcon() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
@@ -13,6 +13,9 @@ function FbIcon() {
 
 export default function Footer() {
   const phone = usePhone()
+  const whatsapp = useWhatsapp()
+  const email = useEmail()
+  const email2 = useEmail2()
 
   return (
     <footer style={{ background: '#0f1020' }} className="text-white">
@@ -31,7 +34,7 @@ export default function Footer() {
             <div className="flex gap-3">
               <a href="#" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.1)' }}><IgIcon/></a>
               <a href="#" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.1)' }}><FbIcon/></a>
-              <a href={`https://wa.me/${phone}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.1)' }}><MessageCircle size={16}/></a>
+              <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.1)' }}><MessageCircle size={16}/></a>
             </div>
           </div>
 
@@ -57,8 +60,9 @@ export default function Footer() {
             <h4 className="font-semibold text-sm tracking-wider uppercase mb-4" style={{ color:'rgba(255,255,255,0.9)' }}>Contact</h4>
             <ul className="space-y-3 text-sm" style={{ color:'rgba(255,255,255,0.5)' }}>
               <li><a href={`tel:+${phone}`} className="flex items-center gap-2 hover:text-orange-400 transition-colors"><Phone size={14}/> +{phone}</a></li>
-              <li><a href="mailto:jerinantony.fg@gmail.com" className="flex items-center gap-2 hover:text-orange-400 transition-colors"><Mail size={14}/> jerinantony.fg@gmail.com</a></li>
-              <li><a href={`https://wa.me/${phone}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-green-400 transition-colors"><MessageCircle size={14}/> WhatsApp Us</a></li>
+              {email && <li><a href={`mailto:${email}`} className="flex items-center gap-2 hover:text-orange-400 transition-colors"><Mail size={14}/> {email}</a></li>}
+              {email2 && <li><a href={`mailto:${email2}`} className="flex items-center gap-2 hover:text-orange-400 transition-colors"><Mail size={14}/> {email2}</a></li>}
+              <li><a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-green-400 transition-colors"><MessageCircle size={14}/> WhatsApp Us</a></li>
               <li><span className="flex items-center gap-2"><MapPin size={14}/> Kerala, Alappuzha</span></li>
             </ul>
           </div>

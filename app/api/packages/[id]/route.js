@@ -1,6 +1,17 @@
-import { updatePackage, deletePackage } from '@/lib/db'
+import { getPackageById, updatePackage, deletePackage } from '@/lib/db'
 import { invalidatePackagesCache } from '@/lib/redis'
 import { guardAdmin } from '@/lib/guardAdmin'
+
+export async function GET(request, { params }) {
+  const { id } = await params
+  try {
+    const pkg = await getPackageById(decodeURIComponent(id))
+    if (!pkg) return Response.json({ error: 'Not found' }, { status: 404 })
+    return Response.json(pkg)
+  } catch {
+    return Response.json({ error: 'Failed to fetch package' }, { status: 500 })
+  }
+}
 
 export async function PUT(request, { params }) {
   if (!(await guardAdmin())) {

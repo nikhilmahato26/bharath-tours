@@ -1,5 +1,6 @@
 import { getAgencyById, updateAgencyStatus, deleteAgency } from '@/lib/db'
 import { guardAdmin } from '@/lib/guardAdmin'
+import { sendApprovalEmail } from '@/lib/email'
 
 export async function GET(request, { params }) {
   if (!(await guardAdmin())) {
@@ -27,6 +28,12 @@ export async function PUT(request, { params }) {
   }
   try {
     await updateAgencyStatus(Number(id), status)
+    if (status === 'approved') {
+      const agency = await getAgencyById(Number(id))
+      if (agency?.email) {
+        sendApprovalEmail(agency.email, agency.name).catch(() => {})
+      }
+    }
     return Response.json({ ok: true })
   } catch {
     return Response.json({ error: 'Failed to update agency' }, { status: 500 })

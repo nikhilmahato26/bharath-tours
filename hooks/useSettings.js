@@ -31,3 +31,16 @@ export function useSettings() {
 export function usePhone() {
   return useSettings().phone || DEFAULTS.phone
 }
+
+export function useWhatsapp() {
+  const s = useSettings()
+  return s.whatsapp || s.phone || DEFAULTS.phone
+}
+
+export function useEmail() {
+  return useSettings().email || ''
+}
+
+export function useEmail2() {
+  return useSettings().email2 || ''
+}

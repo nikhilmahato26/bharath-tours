@@ -1,5 +1,5 @@
 'use client'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Phone, Clock, MapPin, Tag } from 'lucide-react'
 
 function formatPrice(n) {
@@ -11,15 +11,16 @@ function savings(orig, sale) {
 
 export default function PackageCard({ pkg, phone = '919846034558' }) {
   const save = savings(pkg.originalPrice, pkg.salePrice)
+  const router = useRouter()
 
   return (
-    <Link href={`/packages/${pkg.id}`} className="block" style={{ textDecoration: 'none' }}>
-      <div
-        className="h-full flex flex-col transition-all duration-300"
-        style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.06)' }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.15)' }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)' }}
-      >
+    <div
+      className="h-full flex flex-col transition-all duration-300 cursor-pointer"
+      style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.06)', textDecoration: 'none' }}
+      onClick={() => router.push(`/packages/${pkg.id}`)}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.15)' }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)' }}
+    >
         {/* Image */}
         <div style={{ position: 'relative', height: 200, overflow: 'hidden' }}>
           <img
@@ -78,7 +79,6 @@ export default function PackageCard({ pkg, phone = '919846034558' }) {
             View Details
           </button>
         </div>
-      </div>
-    </Link>
+    </div>
   )
 }

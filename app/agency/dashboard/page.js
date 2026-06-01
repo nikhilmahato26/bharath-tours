@@ -57,6 +57,9 @@ export default function AgencyDashboard() {
   const [tab, setTab] = useState('basic')
   const [saving, setSaving] = useState(false)
   const [agencyName, setAgencyName] = useState('')
+  const [agencyPhone, setAgencyPhone] = useState('')
+  const [phoneInput, setPhoneInput] = useState('')
+  const [savingPhone, setSavingPhone] = useState(false)
   const [pkgOptions, setPkgOptions] = useState({ inclusion: [], exclusion: [], highlight: [] })
 
   const fetchPackages = useCallback(async () => {
@@ -71,6 +74,7 @@ export default function AgencyDashboard() {
   useEffect(() => {
     fetchPackages()
     fetch('/api/destinations').then(r => r.ok ? r.json() : []).then(setDestinations).catch(() => {})
+    fetch('/api/agency/profile').then(r => r.ok ? r.json() : null).then(d => { if (d) { setAgencyName(d.name); setAgencyPhone(d.phone); setPhoneInput(d.phone) } }).catch(() => {})
     fetch('/api/package-options').then(r => r.ok ? r.json() : null).then(d => { if (d) setPkgOptions(d) }).catch(() => {})
     fetch('/api/agency/packages').then(r => { if (r.status === 401) router.push('/agency') })
   }, [fetchPackages, router])
@@ -86,6 +90,25 @@ export default function AgencyDashboard() {
     label:       { fontSize: 11, fontWeight: 700, color: '#6b7280', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5, display: 'block' },
     overlay:     { position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px 16px', overflowY: 'auto' },
     modal:       { background: '#fff', borderRadius: 20, width: '100%', maxWidth: 620, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden', marginBottom: 32 },
+  }
+
+  const savePhone = async () => {
+    if (!phoneInput.trim()) { toast.error('Phone number is required'); return }
+    setSavingPhone(true)
+    try {
+      const res = await fetch('/api/agency/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phoneInput.trim() }),
+      })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
+      setAgencyPhone(phoneInput.trim())
+      toast.success('Phone number updated!')
+    } catch (err) {
+      toast.error(err.message || 'Failed to update phone')
+    } finally {
+      setSavingPhone(false)
+    }
   }
 
   const logout = async () => {
@@ -270,6 +293,29 @@ export default function AgencyDashboard() {
               </table>
             </div>
           )}
+        </div>
+        {/* Settings */}
+        <div style={{ marginTop: 28 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#6b7280', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>Settings</div>
+          <div style={{ ...S.card, padding: 20, maxWidth: 420 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#111', marginBottom: 4 }}>Contact Phone Number</div>
+            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>This number is visible to admin and shown on your enquiries.</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={phoneInput}
+                onChange={e => setPhoneInput(e.target.value)}
+                placeholder="Phone number"
+                style={{ ...S.input, flex: 1 }}
+              />
+              <button
+                onClick={savePhone}
+                disabled={savingPhone || phoneInput === agencyPhone}
+                style={{ ...S.btn(), opacity: (savingPhone || phoneInput === agencyPhone) ? 0.5 : 1, whiteSpace: 'nowrap' }}
+              >
+                {savingPhone ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -37,13 +37,11 @@ export default function HomePage() {
   }, [])
 
   const visibleDestinations = destinations.filter(d => d.featured !== false)
-  const featuredDestNames = new Set(visibleDestinations.map(d => d.name))
 
   const shown = packages.filter(p => {
     const matchCat = activeCategory === 'all' || p.category === activeCategory
     const matchDest = activeDest === 'all' || p.destination === activeDest
-    const matchFeatured = !p.destination || featuredDestNames.has(p.destination)
-    return matchCat && matchDest && matchFeatured
+    return matchCat && matchDest
   })
 
   return (
@@ -127,7 +125,7 @@ export default function HomePage() {
             </div>
 
             {/* Destination dropdown filter */}
-            {visibleDestinations.length > 0 && (
+            {destinations.length > 0 && (
               <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
                   <MapPin size={13} style={{ position: 'absolute', left: 12, color: activeDest !== 'all' ? '#e8520a' : '#9ca3af', pointerEvents: 'none', zIndex: 1 }} />
@@ -143,7 +141,7 @@ export default function HomePage() {
                     }}
                   >
                     <option value="all">All Destinations</option>
-                    {visibleDestinations.map(d => (
+                    {destinations.map(d => (
                       <option key={d.id} value={d.name}>{d.emoji} {d.name}</option>
                     ))}
                   </select>

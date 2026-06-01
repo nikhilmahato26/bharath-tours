@@ -13,8 +13,19 @@ export async function POST(request) {
     const otp = randomOtp()
     const key = `otp:agency:${email.toLowerCase().trim()}`
 
-    await getRedis().set(key, otp, { ex: 600 }) // 10 minutes TTL
-    await sendOtpEmail(email.trim(), otp)
+    try {
+      await getRedis().set(key, otp, { ex: 600 })
+    } catch (redisErr) {
+      console.error('send-otp redis error:', redisErr)
+      return Response.json({ error: 'OTP storage failed. Please try again.' }, { status: 500 })
+    }
+
+    try {
+      await sendOtpEmail(email.trim(), otp)
+    } catch (mailErr) {
+      console.error('send-otp email error:', mailErr)
+      return Response.json({ error: 'Failed to send OTP email. Please try again.' }, { status: 500 })
+    }
 
     return Response.json({ ok: true })
   } catch (err) {

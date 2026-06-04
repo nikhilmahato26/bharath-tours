@@ -41,8 +41,8 @@ export default function Footer() {
             </div>
             <p className="text-sm leading-relaxed mb-4" style={{ color:'rgba(255,255,255,0.5)' }}>Curated travel experiences with day-wise itineraries and personal support.</p>
             <div className="flex gap-3">
-              <a href="#" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.1)' }}><IgIcon/></a>
-              <a href="#" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.1)' }}><FbIcon/></a>
+              <a href="https://www.instagram.com/greenkeralatrips?igsh=MXU3aG9rbmg0bHVvNw==" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.1)' }}><IgIcon/></a>
+              <a href="https://facebook.com/share/1CPWAyox1N/?ref=1" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.1)' }}><FbIcon/></a>
               <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:'rgba(255,255,255,0.1)' }}><MessageCircle size={16}/></a>
             </div>
           </div>

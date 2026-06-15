@@ -3,10 +3,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Plus, Package, LogOut, X, Check, Trash2, Clock, CheckCircle, XCircle, ExternalLink, Eye,
+  Plus, Package, LogOut, X, Check, Trash2, Clock, CheckCircle, XCircle, ExternalLink, Eye, Pencil,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import TagSelector from '@/components/TagSelector'
+import PackagePreview from '@/components/PackagePreview'
 
 function fmtRange(start, end) {
   if (!start && !end) return ''
@@ -54,6 +55,8 @@ export default function AgencyDashboard() {
   const [loaded, setLoaded] = useState(false)
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState(EMPTY_PKG)
+  const [editId, setEditId] = useState(null)
+  const [showPreview, setShowPreview] = useState(false)
   const [tab, setTab] = useState('basic')
   const [saving, setSaving] = useState(false)
   const [pkgVisLoading, setPkgVisLoading] = useState(null)
@@ -152,13 +155,34 @@ export default function AgencyDashboard() {
     const first = destinations[0]
     const pkgId = 'GKT-' + Math.random().toString(36).slice(2, 8).toUpperCase()
     setForm({ ...EMPTY_PKG, id: pkgId, destination: first?.name ?? '', badgeColor: first?.color ?? '#2e9e7a' })
+    setEditId(null)
+    setShowPreview(false)
+    setTab('basic')
+    setModal('form')
+  }
+
+  const openEdit = (pkg) => {
+    const migrateAct = a => typeof a === 'string'
+      ? { time: '', emoji: '', title: a, details: [''], tags: [] }
+      : { time: a.time || '', emoji: a.emoji || '', title: a.title || '', details: a.details?.length ? a.details : [''], tags: a.tags || [] }
+    setForm({
+      ...EMPTY_PKG,
+      ...pkg,
+      highlights: pkg.highlights || [],
+      inclusions: pkg.inclusions || [],
+      exclusions: pkg.exclusions || [],
+      itinerary: pkg.itinerary?.length ? pkg.itinerary.map(d => ({ ...d, hotel: d.hotel || '', activities: d.activities?.length ? d.activities.map(migrateAct) : [{ time: '', emoji: '', title: '', details: [''], tags: [] }], image: d.image || '' })) : [{ day: 1, title: '', description: '', activities: [{ time: '', emoji: '', title: '', details: [''], tags: [] }], image: '', hotel: '' }],
+      availableDates: pkg.availableDates || [],
+    })
+    setEditId(pkg.id)
+    setShowPreview(false)
     setTab('basic')
     setModal('form')
   }
 
   const handleSave = async () => {
-    if (!form.title?.trim()) { toast.error('Package title is required'); return }
-    if (!form.salePrice) { toast.error('Sale price is required'); return }
+    if (!form.title?.trim()) { toast.error('Package title is required'); setShowPreview(false); setTab('basic'); return }
+    if (!form.salePrice) { toast.error('Sale price is required'); setShowPreview(false); setTab('basic'); return }
     const pkg = {
       ...form,
       originalPrice: Number(form.originalPrice) || 0,
@@ -170,15 +194,21 @@ export default function AgencyDashboard() {
     }
     setSaving(true)
     try {
-      const res = await fetch('/api/agency/packages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pkg),
-      })
+      const res = editId
+        ? await fetch(`/api/agency/packages/${editId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pkg),
+          })
+        : await fetch('/api/agency/packages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pkg),
+          })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
       await fetchPackages()
       setModal(null)
-      toast.success('Package submitted for approval!')
+      toast.success(editId ? 'Package updated and resubmitted for approval!' : 'Package submitted for approval!')
     } catch (err) {
       toast.error(err.message || 'Failed to submit package')
     } finally {
@@ -268,7 +298,7 @@ export default function AgencyDashboard() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f9fafb', borderBottom: '1px solid #f3f4f6' }}>
-                    {['Package', 'Category', 'Destination', 'Price', 'Status', 'Visibility'].map((h, i) => (
+                    {['Package', 'Category', 'Destination', 'Price', 'Status', 'Visibility', 'Actions'].map((h, i) => (
                       <th key={h} style={{ padding: '10px 16px', textAlign: i >= 4 ? 'center' : 'left', fontWeight: 700, color: '#6b7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
@@ -322,6 +352,14 @@ export default function AgencyDashboard() {
                             <span style={{ fontSize: 11, color: '#d1d5db' }}>—</span>
                           )}
                         </td>
+                        <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => openEdit(pkg)}
+                            title="Edit package"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 999, border: '1.5px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 11, color: '#1e3a5f' }}>
+                            <Pencil size={11} /> Edit
+                          </button>
+                        </td>
                       </tr>
                     )
                   })}
@@ -357,18 +395,19 @@ export default function AgencyDashboard() {
 
       {/* Add Package Modal */}
       {modal === 'form' && (
-        <div style={S.overlay} onClick={e => e.target === e.currentTarget && setModal(null)}>
+        <div style={S.overlay}>
           <div style={S.modal}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'linear-gradient(135deg,#1e3a5f,#0f172a)' }}>
-              <h2 style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>Submit New Package</h2>
+              <h2 style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>{showPreview ? 'Package Preview' : editId ? 'Edit Package' : 'Submit New Package'}</h2>
               <button onClick={() => setModal(null)} style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <X size={15} />
               </button>
             </div>
             <div style={{ background: '#fffbeb', padding: '8px 20px', fontSize: 12, color: '#92400e', display: 'flex', gap: 6, alignItems: 'center' }}>
-              <Clock size={12} /> Your package will be reviewed by admin before going live.
+              <Clock size={12} /> {editId ? 'Editing resubmits this package for admin review.' : 'Your package will be reviewed by admin before going live.'}
             </div>
 
+            {!showPreview && (
             <div style={{ display: 'flex', borderBottom: '1px solid #f3f4f6', padding: '0 20px' }}>
               {[['basic', 'Basic'], ['itinerary', 'Itinerary'], ['media', 'Media & Lists']].map(([k, l]) => (
                 <button key={k} onClick={() => setTab(k)}
@@ -377,9 +416,11 @@ export default function AgencyDashboard() {
                 </button>
               ))}
             </div>
+            )}
 
             <div style={{ padding: 20, maxHeight: '55vh', overflowY: 'auto' }}>
-              {tab === 'basic' && (
+              {showPreview && <PackagePreview pkg={form} />}
+              {!showPreview && tab === 'basic' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div style={{ gridColumn: '1/-1' }}>
                     <label style={S.label}>Title *</label>
@@ -473,7 +514,7 @@ export default function AgencyDashboard() {
                 </div>
               )}
 
-              {tab === 'itinerary' && (
+              {!showPreview && tab === 'itinerary' && (
                 <div>
                   {(form.itinerary || []).map((day, di) => (
                     <div key={di} style={{ border: '1px solid #f3f4f6', borderRadius: 12, padding: 14, marginBottom: 10, background: '#fafafa' }}>
@@ -544,7 +585,7 @@ export default function AgencyDashboard() {
                 </div>
               )}
 
-              {tab === 'media' && (
+              {!showPreview && tab === 'media' && (
                 <div>
                   {[{ l: 'Card Image URL', f: 'image', ph: 'https://images.unsplash.com/...' }, { l: 'Hero Image URL', f: 'heroImage', ph: 'Larger image for the package detail page' }].map(({ l, f, ph }) => (
                     <div key={f} style={{ marginBottom: 14 }}>
@@ -576,12 +617,22 @@ export default function AgencyDashboard() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: '14px 20px', borderTop: '1px solid #f3f4f6', background: '#fafafa' }}>
-              <button onClick={() => setModal(null)} style={{ padding: '9px 18px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              {showPreview ? (
+                <button onClick={() => setShowPreview(false)} style={{ padding: '9px 18px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginRight: 'auto' }}>← Back to Edit</button>
+              ) : (
+                <button onClick={() => setModal(null)} style={{ padding: '9px 18px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              )}
+              {!showPreview && (
+                <button onClick={() => setShowPreview(true)}
+                  style={{ padding: '9px 18px', borderRadius: 10, border: '1.5px solid #1e3a5f', background: '#fff', color: '#1e3a5f', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Eye size={14} /> Preview
+                </button>
+              )}
               <button onClick={handleSave} disabled={saving}
                 style={{ padding: '9px 20px', borderRadius: 10, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg,#1e3a5f,#0f172a)', color: '#fff', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, opacity: saving ? 0.7 : 1 }}>
                 {saving
                   ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} /> Submitting...</>
-                  : <><Check size={14} /> Submit for Approval</>
+                  : <><Check size={14} /> {editId ? 'Update & Resubmit' : 'Submit for Approval'}</>
                 }
               </button>
             </div>

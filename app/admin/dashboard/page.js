@@ -1167,7 +1167,7 @@ export default function Dashboard() {
 
       {/* ── Add/Edit Package Modal ── */}
       {modal === 'form' && (
-        <div style={S.overlay} onClick={e => e.target === e.currentTarget && setModal(null)}>
+        <div style={S.overlay}>
           <div style={S.modal}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'linear-gradient(135deg,#e8520a,#c93d00)' }}>
               <h2 style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>{editId ? 'Edit Package' : 'Add Package'}</h2>

@@ -383,37 +383,6 @@ export default function PackagePage({ params }) {
               </div>
             </section>
 
-            {/* Price Breakdown */}
-            {hasBreakdown && (
-              <section style={{ marginBottom: 40 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
-                  <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: isMobile ? 20 : 24, color: '#111', margin: 0 }}>Price Breakdown</h2>
-                  <a
-                    href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(waChanges)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 999, background: 'linear-gradient(135deg,#25d366,#128c7e)', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap' }}
-                  >
-                    <MessageCircle size={15} /> Request Changes
-                  </a>
-                </div>
-                <div style={{ background: '#fff', border: '1px solid #f3f4f6', borderRadius: 16, padding: isMobile ? 18 : 22, boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
-                  {occSummary && <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>{occSummary}</div>}
-                  {Number(pkg.adults) > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 12, marginBottom: 12, borderBottom: Number(pkg.childPrice) > 0 && Number(pkg.children) > 0 ? '1px solid #f3f4f6' : 'none' }}>
-                      <span style={{ fontSize: 15, color: '#374151' }}>Price per adult</span>
-                      <span style={{ fontSize: 17, fontWeight: 700, color: '#111' }}>{fmt(pkg.salePrice)}</span>
-                    </div>
-                  )}
-                  {Number(pkg.childPrice) > 0 && Number(pkg.children) > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 15, color: '#374151' }}>Price per child</span>
-                      <span style={{ fontSize: 17, fontWeight: 700, color: '#111' }}>{fmt(pkg.childPrice)}</span>
-                    </div>
-                  )}
-                </div>
-              </section>
-            )}
-
             {/* Note */}
             {pkg.note?.trim() && (
               <section style={{ marginBottom: 28 }}>
@@ -528,11 +497,6 @@ export default function PackagePage({ params }) {
                     </div>
                     <div style={{ fontSize: 40, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{fmt(pkg.salePrice)}</div>
                     <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>{Number(pkg.childPrice) > 0 ? 'Per Adult' : pkg.priceNote}</div>
-                    {Number(pkg.childPrice) > 0 && (
-                      <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginTop: 8 }}>
-                        {fmt(pkg.childPrice)} <span style={{ fontSize: 12, fontWeight: 400, color: 'rgba(255,255,255,0.7)' }}>Per Child</span>
-                      </div>
-                    )}
                     <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginTop: 12, padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.15)' }}>
                       <Info size={13} style={{ color: '#fff', flexShrink: 0, marginTop: 1 }} />
                       <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>Rate may change based on your customization.</span>
@@ -563,6 +527,32 @@ export default function PackagePage({ params }) {
                         <span style={{ fontWeight: 600, color: '#111', maxWidth: '60%', textAlign: 'right' }}>{v}</span>
                       </div>
                     ))}
+
+                    {hasBreakdown && (
+                      <>
+                        <div style={{ height: 1, background: '#f3f4f6', margin: '16px 0' }} />
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#111', marginBottom: 10 }}>Price Breakdown</div>
+                        {Number(pkg.adults) > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, fontSize: 13 }}>
+                            <span style={{ color: '#6b7280' }}>Price per adult</span>
+                            <span style={{ fontWeight: 700, color: '#111' }}>{fmt(pkg.salePrice)}</span>
+                          </div>
+                        )}
+                        {Number(pkg.childPrice) > 0 && Number(pkg.children) > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, fontSize: 13 }}>
+                            <span style={{ color: '#6b7280' }}>Price per child</span>
+                            <span style={{ fontWeight: 700, color: '#111' }}>{fmt(pkg.childPrice)}</span>
+                          </div>
+                        )}
+                        <a
+                          href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(waChanges)}`}
+                          target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 0', borderRadius: 999, marginTop: 6, background: 'linear-gradient(135deg,#25d366,#128c7e)', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}
+                        >
+                          <MessageCircle size={15} /> Request Changes
+                        </a>
+                      </>
+                    )}
 
                     <div style={{ height: 1, background: '#f3f4f6', margin: '16px 0' }} />
 

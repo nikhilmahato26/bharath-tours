@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import TagSelector from '@/components/TagSelector'
 import PackagePreview from '@/components/PackagePreview'
 import HomestayFields from '@/components/HomestayFields'
+import ImagePositioner from '@/components/ImagePositioner'
 
 function fmtRange(start, end) {
   if (!start && !end) return ''
@@ -36,8 +37,8 @@ const EMPTY_PKG = {
   id: '', destination: '', badge: '', badgeColor: '#2e9e7a',
   duration: '3 Days & 2 Nights', title: '', subtitle: '', hotels: '',
   adults: '', children: '', rooms: '',
-  originalPrice: '', salePrice: '', childPrice: '', priceNote: 'Per Person',
-  image: '', heroImage: '', overview: '', note: '', category: 'package',
+  originalPrice: '', salePrice: '', childPrice: '', childAgeMin: '', childAgeMax: '', priceNote: 'Per Person',
+  image: '', heroImage: '', imagePos: '', heroImagePos: '', overview: '', note: '', category: 'package',
   highlights: [], inclusions: [], exclusions: [],
   itinerary: [{ day: 1, title: '', description: '', activities: [{ time: '', emoji: '', title: '', details: [''], tags: [] }], image: '', hotel: '' }],
   availableDates: [],
@@ -506,6 +507,15 @@ export default function AgencyDashboard() {
                     <label style={S.label}>Price per Child (₹)</label>
                     <input type="number" value={form.childPrice} onChange={e => setForm(f => ({ ...f, childPrice: e.target.value }))} style={S.input} placeholder="6000" />
                   </div>
+                  <div>
+                    <label style={S.label}>Child Age Range</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input type="number" min="0" value={form.childAgeMin} onChange={e => setForm(f => ({ ...f, childAgeMin: e.target.value }))} style={S.input} placeholder="2" />
+                      <span style={{ color: '#9ca3af', fontSize: 13 }}>to</span>
+                      <input type="number" min="0" value={form.childAgeMax} onChange={e => setForm(f => ({ ...f, childAgeMax: e.target.value }))} style={S.input} placeholder="11" />
+                      <span style={{ color: '#9ca3af', fontSize: 13 }}>yrs</span>
+                    </div>
+                  </div>
                   <div style={{ gridColumn: '1/-1', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                     <div>
                       <label style={S.label}>Adults</label>
@@ -599,7 +609,7 @@ export default function AgencyDashboard() {
                       <div style={{ marginBottom: 12 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 5 }}>Day Image URL (optional)</div>
                         <input value={day.image || ''} onChange={e => itinChange(di, 'image', e.target.value)} style={{ ...S.input, fontSize: 12 }} placeholder="https://..." />
-                        {day.image && <img src={day.image} alt={`Day ${day.day}`} onError={e => e.target.style.display = 'none'} style={{ marginTop: 5, width: '100%', height: 60, objectFit: 'cover', borderRadius: 7 }} />}
+                        <ImagePositioner src={day.image} value={day.imagePos} onChange={v => itinChange(di, 'imagePos', v)} height={100} rounded={7} />
                       </div>
                       {/* Activities */}
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8 }}>Activities / Schedule</div>
@@ -656,11 +666,11 @@ export default function AgencyDashboard() {
 
               {!showPreview && tab === 'media' && (
                 <div>
-                  {[{ l: 'Card Image URL', f: 'image', ph: 'https://images.unsplash.com/...' }, { l: 'Hero Image URL', f: 'heroImage', ph: 'Larger image for the package detail page' }].map(({ l, f, ph }) => (
+                  {[{ l: 'Card Image URL', f: 'image', ph: 'https://images.unsplash.com/...', h: 140 }, { l: 'Hero Image URL', f: 'heroImage', ph: 'Larger image for the package detail page', h: 180 }].map(({ l, f, ph, h }) => (
                     <div key={f} style={{ marginBottom: 14 }}>
                       <label style={S.label}>{l}</label>
                       <input value={form[f] || ''} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))} style={S.input} placeholder={ph} />
-                      {form[f] && <img src={form[f]} alt="preview" onError={e => e.target.style.display = 'none'} style={{ marginTop: 6, width: '100%', height: 80, objectFit: 'cover', borderRadius: 8 }} />}
+                      <ImagePositioner src={form[f]} value={form[`${f}Pos`]} onChange={v => setForm(p => ({ ...p, [`${f}Pos`]: v }))} height={h} />
                     </div>
                   ))}
 

@@ -128,7 +128,11 @@ export default function PackagePage({ params }) {
     Number(pkg.children) > 0 && `${pkg.children} child${Number(pkg.children) !== 1 ? 'ren' : ''}`,
   ].filter(Boolean)
   const occSummary = occParts.join(', ')
-  const hasBreakdown = Number(pkg.salePrice) > 0 && (Number(pkg.adults) > 0 || Number(pkg.children) > 0)
+  const hasBreakdown = Number(pkg.salePrice) > 0 && (Number(pkg.adults) > 0 || Number(pkg.children) > 0 || Number(pkg.childPrice) > 0)
+  const childAgeLabel = (pkg.childAgeMin && pkg.childAgeMax)
+    ? `${pkg.childAgeMin}–${pkg.childAgeMax} yrs`
+    : pkg.childAgeMin ? `${pkg.childAgeMin}+ yrs`
+    : pkg.childAgeMax ? `up to ${pkg.childAgeMax} yrs` : ''
   const waChanges = `Hi! I'd like to request changes for ${pkg.title} (${pkg.id})${occSummary ? ` — ${occSummary}` : ''}. Current rate: ₹${Number(pkg.salePrice).toLocaleString('en-IN')}/adult${Number(pkg.childPrice) > 0 ? `, ₹${Number(pkg.childPrice).toLocaleString('en-IN')}/child` : ''}.`
 
   return (
@@ -140,7 +144,7 @@ export default function PackagePage({ params }) {
         <img
           src={pkg.heroImage || pkg.image}
           alt={pkg.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.45)' }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: (pkg.heroImage ? pkg.heroImagePos : pkg.imagePos) || 'center', filter: 'brightness(0.45)' }}
           onError={e => { e.target.src = 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=1400&q=85' }}
         />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)' }} />
@@ -287,7 +291,7 @@ export default function PackagePage({ params }) {
                           <div style={{ padding: '0 16px 20px', borderTop: '1px solid #f9f0eb' }}>
                             {day.image && (
                               <img src={day.image} alt={day.title} onError={e => e.target.style.display = 'none'}
-                                style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 10, marginTop: 14, marginBottom: 14 }} />
+                                style={{ width: '100%', height: 220, objectFit: 'cover', objectPosition: day.imagePos || 'center', borderRadius: 10, marginTop: 14, marginBottom: 14 }} />
                             )}
                             {day.description && (
                               <p style={{ color: '#6b7280', fontSize: 13, lineHeight: 1.7, marginTop: 14, marginBottom: acts.length ? 20 : 0, padding: '0 2px' }}>{day.description}</p>
@@ -532,15 +536,15 @@ export default function PackagePage({ params }) {
                       <>
                         <div style={{ height: 1, background: '#f3f4f6', margin: '16px 0' }} />
                         <div style={{ fontSize: 13, fontWeight: 800, color: '#111', marginBottom: 10 }}>Price Breakdown</div>
-                        {Number(pkg.adults) > 0 && (
+                        {Number(pkg.salePrice) > 0 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, fontSize: 13 }}>
                             <span style={{ color: '#6b7280' }}>Price per adult</span>
                             <span style={{ fontWeight: 700, color: '#111' }}>{fmt(pkg.salePrice)}</span>
                           </div>
                         )}
-                        {Number(pkg.childPrice) > 0 && Number(pkg.children) > 0 && (
+                        {Number(pkg.childPrice) > 0 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, fontSize: 13 }}>
-                            <span style={{ color: '#6b7280' }}>Price per child</span>
+                            <span style={{ color: '#6b7280' }}>Price per child{childAgeLabel ? ` (${childAgeLabel})` : ''}</span>
                             <span style={{ fontWeight: 700, color: '#111' }}>{fmt(pkg.childPrice)}</span>
                           </div>
                         )}

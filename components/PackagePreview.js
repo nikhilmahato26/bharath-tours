@@ -15,6 +15,7 @@ function getDR(dr) { return (dr && typeof dr === 'object') ? dr : { start: '', e
 // Read-only rendering of a package form, used to preview before submitting.
 export default function PackagePreview({ pkg }) {
   const hero = pkg.heroImage || pkg.image
+  const heroPos = (pkg.heroImage ? pkg.heroImagePos : pkg.imagePos) || 'center'
   const orig = Number(pkg.originalPrice) || 0
   const sale = Number(pkg.salePrice) || 0
   const save = orig > sale ? orig - sale : 0
@@ -29,7 +30,7 @@ export default function PackagePreview({ pkg }) {
       {/* Hero */}
       <div style={{ position: 'relative', height: 200, borderRadius: 14, overflow: 'hidden', background: '#f3f4f6' }}>
         {hero
-          ? <img src={hero} alt={pkg.title} onError={e => { e.target.style.display = 'none' }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img src={hero} alt={pkg.title} onError={e => { e.target.style.display = 'none' }} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: heroPos }} />
           : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>No image added</div>}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.35), transparent)' }} />
         {pkg.destination && (
@@ -74,7 +75,7 @@ export default function PackagePreview({ pkg }) {
       {Number(pkg.childPrice) > 0 && (
         <div style={{ marginTop: 10, display: 'flex', gap: 16, fontSize: 13, color: '#374151' }}>
           <span>Adult: <strong style={{ color: '#111' }}>{fmt(sale)}</strong></span>
-          <span>Child: <strong style={{ color: '#111' }}>{fmt(pkg.childPrice)}</strong></span>
+          <span>Child{(pkg.childAgeMin || pkg.childAgeMax) ? ` (${[pkg.childAgeMin, pkg.childAgeMax].filter(Boolean).join('–')} yrs)` : ''}: <strong style={{ color: '#111' }}>{fmt(pkg.childPrice)}</strong></span>
         </div>
       )}
 
@@ -187,7 +188,7 @@ export default function PackagePreview({ pkg }) {
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#111' }}>{day.title || `Day ${day.day}`}</div>
                 </div>
                 {day.description && <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5, marginBottom: 8 }}>{day.description}</p>}
-                {day.image && <img src={day.image} alt={`Day ${day.day}`} onError={e => { e.target.style.display = 'none' }} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
+                {day.image && <img src={day.image} alt={`Day ${day.day}`} onError={e => { e.target.style.display = 'none' }} style={{ width: '100%', height: 100, objectFit: 'cover', objectPosition: day.imagePos || 'center', borderRadius: 8, marginBottom: 8 }} />}
                 {day.hotel && <div style={{ fontSize: 12, color: '#374151', marginBottom: 8 }}>🛏 {day.hotel}</div>}
                 {(day.activities || []).map((act, ai) => {
                   const a = typeof act === 'string' ? { title: act, details: [], tags: [] } : act

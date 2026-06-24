@@ -6,10 +6,11 @@ import { invalidateSettingsCache } from '@/hooks/useSettings'
 import TagSelector from '@/components/TagSelector'
 import PackagePreview from '@/components/PackagePreview'
 import HomestayFields from '@/components/HomestayFields'
+import ImagePositioner from '@/components/ImagePositioner'
 import {
   Plus, Pencil, Copy, Trash2, LogOut, Eye, X, Check, ExternalLink, AlertTriangle,
   Package, MapPin, Inbox, Settings, Phone, MessageCircle, Mail, Calendar,
-  Building2, CheckCircle, XCircle, Star,
+  Building2, CheckCircle, XCircle, Star, Home, Ship,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -45,8 +46,8 @@ const EMPTY_PKG = {
   id: '', destination: '', badge: '', badgeColor: '#2e9e7a',
   duration: '3 Days & 2 Nights', title: '', subtitle: '', hotels: '',
   adults: '', children: '', rooms: '',
-  originalPrice: '', salePrice: '', childPrice: '', priceNote: 'Per Person',
-  image: '', heroImage: '', overview: '', note: '', category: 'package',
+  originalPrice: '', salePrice: '', childPrice: '', childAgeMin: '', childAgeMax: '', priceNote: 'Per Person',
+  image: '', heroImage: '', imagePos: '', heroImagePos: '', overview: '', note: '', category: 'package',
   highlights: [], inclusions: [], exclusions: [],
   itinerary: [{ day: 1, title: '', description: '', activities: [{ time: '', emoji: '', title: '', details: [''], tags: [] }], image: '', hotel: '' }],
   availableDates: [],
@@ -100,11 +101,21 @@ export default function Dashboard() {
   const [agencyDropdownSearch, setAgencyDropdownSearch] = useState('')
   const [pkgOptions, setPkgOptions] = useState({ inclusion: [], exclusion: [], highlight: [] })
 
-  const [newDest, setNewDest] = useState({ name: '', color: '#e8520a', image_url: '', description: '', emoji: '📍' })
+  const [newDest, setNewDest] = useState({ name: '', color: '#e8520a', image_url: '', description: '', emoji: '📍', image_pos: '' })
   const [destVisLoading, setDestVisLoading] = useState(null)
   const [destSaving, setDestSaving] = useState(false)
   const [editDestId, setEditDestId] = useState(null)
-  const [editDestForm, setEditDestForm] = useState({ color: '#e8520a', image_url: '', description: '', emoji: '📍' })
+  const [editDestForm, setEditDestForm] = useState({ color: '#e8520a', image_url: '', description: '', emoji: '📍', image_pos: '' })
+
+  // Listings (homestays & houseboats)
+  const [homestays, setHomestays] = useState([])
+  const [houseboats, setHouseboats] = useState([])
+  const [listingModalType, setListingModalType] = useState(null) // 'homestay' | 'houseboat'
+  const [newListing, setNewListing] = useState({ name: '', color: '#e8520a', image_url: '', description: '', location: '', price: '', emoji: '🏡', image_pos: '' })
+  const [listingSaving, setListingSaving] = useState(false)
+  const [listingVisLoading, setListingVisLoading] = useState(null)
+  const [editListingId, setEditListingId] = useState(null)
+  const [editListingForm, setEditListingForm] = useState({ color: '#e8520a', image_url: '', description: '', location: '', price: '', emoji: '🏡', image_pos: '' })
   const [settingsForm, setSettingsForm] = useState({ phone: '', whatsapp: '', email: '', email2: '', banner_days: '30', admin_recovery_email: '', min_dest_packages: '1' })
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [adminUsername, setAdminUsername] = useState('')
@@ -140,6 +151,16 @@ export default function Dashboard() {
     } catch {}
   }, [])
 
+  const fetchListings = useCallback(async () => {
+    try {
+      const [hs, hb] = await Promise.all([
+        fetch('/api/listings?type=homestay').then(r => r.ok ? r.json() : []),
+        fetch('/api/listings?type=houseboat').then(r => r.ok ? r.json() : []),
+      ])
+      setHomestays(hs); setHouseboats(hb)
+    } catch {}
+  }, [])
+
   const fetchEnquiries = useCallback(async () => {
     try {
       const res = await fetch('/api/enquiries')
@@ -157,8 +178,9 @@ export default function Dashboard() {
   useEffect(() => {
     fetchPackages()
     fetchDestinations()
+    fetchListings()
     fetch('/api/package-options').then(r => r.ok ? r.json() : null).then(d => { if (d) setPkgOptions(d) }).catch(() => {})
-  }, [fetchPackages, fetchDestinations])
+  }, [fetchPackages, fetchDestinations, fetchListings])
 
   useEffect(() => {
     if (section === 'enquiries') fetchEnquiries()
@@ -357,7 +379,7 @@ export default function Dashboard() {
       const res = await fetch('/api/destinations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newDest) })
       if (!res.ok) { const { error } = await res.json(); toast.error(error || 'Failed'); return }
       await fetchDestinations()
-      setNewDest({ name: '', color: '#e8520a', image_url: '', description: '', emoji: '📍' })
+      setNewDest({ name: '', color: '#e8520a', image_url: '', description: '', emoji: '📍', image_pos: '' })
       toast.success('Destination added!')
     } catch { toast.error('Failed to add destination.') }
     finally { setDestSaving(false) }
@@ -393,6 +415,56 @@ export default function Dashboard() {
           await fetchDestinations()
           toast.success('Destination deleted')
         } catch { toast.error('Failed to delete destination.') }
+      },
+    })
+  }
+
+  // ─── Listing handlers (homestays & houseboats) ──────────────────────────────
+  const LISTING_LABEL = { homestay: 'Homestay', houseboat: 'Houseboat' }
+
+  const handleAddListing = async (type) => {
+    if (!newListing.name.trim()) { toast.error(`${LISTING_LABEL[type]} name is required`); return }
+    setListingSaving(true)
+    try {
+      const res = await fetch('/api/listings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newListing, type }) })
+      if (!res.ok) { const { error } = await res.json(); toast.error(error || 'Failed'); return }
+      await fetchListings()
+      setNewListing({ name: '', color: '#e8520a', image_url: '', description: '', location: '', price: '', emoji: type === 'houseboat' ? '🛶' : '🏡', image_pos: '' })
+      toast.success(`${LISTING_LABEL[type]} added!`)
+    } catch { toast.error('Failed to add.') }
+    finally { setListingSaving(false) }
+  }
+
+  const handleUpdateListing = async (id) => {
+    try {
+      const res = await fetch(`/api/listings/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editListingForm) })
+      if (!res.ok) throw new Error()
+      await fetchListings(); setEditListingId(null)
+      toast.success('Updated!')
+    } catch { toast.error('Failed to update.') }
+  }
+
+  const handleToggleListingFeatured = async (id, featured) => {
+    setListingVisLoading(id)
+    try {
+      const res = await fetch(`/api/listings/${id}/feature`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ featured }) })
+      if (!res.ok) throw new Error()
+      await fetchListings()
+      toast.success(featured ? 'Shown on website' : 'Hidden from website')
+    } catch { toast.error('Failed to update visibility') }
+    finally { setListingVisLoading(null) }
+  }
+
+  const handleDeleteListing = (id, name) => {
+    setConfirm({
+      message: `Delete "${name}"?`,
+      onConfirm: async () => {
+        setConfirm(null)
+        try {
+          await fetch(`/api/listings/${id}`, { method: 'DELETE' })
+          await fetchListings()
+          toast.success('Deleted')
+        } catch { toast.error('Failed to delete.') }
       },
     })
   }
@@ -497,6 +569,88 @@ export default function Dashboard() {
     modal:       { background: '#fff', borderRadius: 20, width: '100%', maxWidth: 860, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden', marginBottom: 32 },
   }
 
+  const LISTING_META = {
+    homestay:  { label: 'Homestay',  plural: 'Homestays',  icon: Home, emoji: '🏡', noun: 'homestays' },
+    houseboat: { label: 'Houseboat', plural: 'Houseboats', icon: Ship, emoji: '🛶', noun: 'houseboats' },
+  }
+
+  const openListingModal = (type) => {
+    setNewListing({ name: '', color: '#e8520a', image_url: '', description: '', location: '', price: '', emoji: LISTING_META[type].emoji, image_pos: '' })
+    setEditListingId(null)
+    setListingModalType(type)
+    setModal('listing')
+  }
+
+  const renderListingSection = (type, items) => {
+    const meta = LISTING_META[type]
+    const Icon = meta.icon
+    return (
+      <>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h2 style={{ fontWeight: 700, fontSize: 18, color: '#111', margin: 0 }}>{meta.plural}</h2>
+            <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>{items.length} total · {items.filter(d => d.featured !== false).length} shown on website</p>
+          </div>
+          <button onClick={() => openListingModal(type)} style={S.btn()}>
+            <Plus size={13} /> Add {meta.label}
+          </button>
+        </div>
+
+        {items.length === 0 ? (
+          <div style={{ ...S.card, padding: '60px 24px', textAlign: 'center', color: '#9ca3af' }}>
+            <Icon size={48} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
+            <p style={{ fontWeight: 600, fontSize: 15 }}>No {meta.noun} yet</p>
+            <p style={{ fontSize: 13 }}>Add {meta.noun} to showcase them on your website.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {items.map(d => (
+              <div key={d.id} style={{ ...S.card, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', flexWrap: 'wrap', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 56, height: 44, borderRadius: 10, overflow: 'hidden', background: '#f3f4f6', flexShrink: 0 }}>
+                      {d.image_url && <img src={d.image_url} alt={d.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => e.target.style.display = 'none'} />}
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>{d.emoji || meta.emoji} {d.name}</span>
+                        {d.price && <span style={{ fontSize: 12, fontWeight: 700, color: '#e8520a' }}>{d.price}</span>}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
+                        {d.location && <span style={{ color: '#6b7280' }}>📍 {d.location}</span>}
+                        {d.description && <span style={{ marginLeft: d.location ? 8 : 0, color: '#6b7280' }}>{d.location ? '· ' : ''}{d.description}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      onClick={() => handleToggleListingFeatured(d.id, !(d.featured !== false))}
+                      disabled={listingVisLoading === d.id}
+                      title={d.featured !== false ? 'Shown on website — click to hide' : 'Hidden from website — click to show'}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 999, border: `1.5px solid ${d.featured !== false ? '#22c55e' : '#e5e7eb'}`, background: d.featured !== false ? '#f0fdf4' : '#f9fafb', cursor: listingVisLoading === d.id ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 12, color: d.featured !== false ? '#22c55e' : '#9ca3af', opacity: listingVisLoading === d.id ? 0.7 : 1 }}>
+                      {listingVisLoading === d.id
+                        ? <span style={{ width: 13, height: 13, border: `2px solid ${d.featured !== false ? '#bbf7d0' : '#e5e7eb'}`, borderTop: `2px solid ${d.featured !== false ? '#22c55e' : '#9ca3af'}`, borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} />
+                        : <Eye size={13} />}
+                      {d.featured !== false ? 'Visible' : 'Hidden'}
+                    </button>
+                    <button onClick={() => { setEditListingId(d.id); setEditListingForm({ color: d.color, image_url: d.image_url || '', description: d.description || '', location: d.location || '', price: d.price || '', emoji: d.emoji || meta.emoji, image_pos: d.image_pos || '' }); setListingModalType(type); setModal('listing') }}
+                      style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #e5e7eb', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
+                      <Pencil size={13} />
+                    </button>
+                    <button onClick={() => handleDeleteListing(d.id, d.name)}
+                      style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #fee2e2', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    )
+  }
+
   if (!loaded) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f1eb' }}>
@@ -541,6 +695,8 @@ export default function Dashboard() {
           {[
             { key: 'packages',      label: 'Packages',     icon: Package,   badge: pendingCount > 0 ? pendingCount : null },
             { key: 'destinations',  label: 'Destinations', icon: MapPin },
+            { key: 'homestays',     label: 'Homestays',    icon: Home },
+            { key: 'houseboats',    label: 'Houseboats',   icon: Ship },
             { key: 'agencies',      label: 'Agencies',     icon: Building2, badge: pendingAgencies > 0 ? pendingAgencies : null },
             { key: 'enquiries',     label: 'Enquiries',    icon: Inbox,     badge: enquiries.length > 0 && section !== 'enquiries' ? enquiries.length : null },
             { key: 'settings',      label: 'Settings',     icon: Settings },
@@ -653,7 +809,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => { setNewDest({ name: '', color: '#e8520a', image_url: '', description: '', emoji: '📍' }); setEditDestId(null); setModal('destination') }} style={S.btn('#f3f4f6', '#555')}>
+                <button onClick={() => { setNewDest({ name: '', color: '#e8520a', image_url: '', description: '', emoji: '📍', image_pos: '' }); setEditDestId(null); setModal('destination') }} style={S.btn('#f3f4f6', '#555')}>
                   <MapPin size={13} /> Destinations
                 </button>
 <button onClick={openAdd} style={{ padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#e8520a,#c93d00)', color: '#fff', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -832,7 +988,7 @@ export default function Dashboard() {
                 <h2 style={{ fontWeight: 700, fontSize: 18, color: '#111', margin: 0 }}>Destinations</h2>
                 <p style={{ fontSize: 13, color: '#9ca3af', margin: '4px 0 0' }}>{destinations.length} total · {destinations.filter(d => d.featured !== false).length} shown on website</p>
               </div>
-              <button onClick={() => { setNewDest({ name: '', color: '#e8520a', image_url: '', description: '', emoji: '📍' }); setEditDestId(null); setModal('destination') }} style={S.btn()}>
+              <button onClick={() => { setNewDest({ name: '', color: '#e8520a', image_url: '', description: '', emoji: '📍', image_pos: '' }); setEditDestId(null); setModal('destination') }} style={S.btn()}>
                 <Plus size={13} /> Add Destination
               </button>
             </div>
@@ -874,7 +1030,7 @@ export default function Dashboard() {
                             : <Eye size={13} />}
                           {d.featured !== false ? 'Visible' : 'Hidden'}
                         </button>
-                        <button onClick={() => { setEditDestId(d.id); setEditDestForm({ color: d.color, image_url: d.image_url || '', description: d.description || '', emoji: d.emoji || '📍' }); setModal('destination') }}
+                        <button onClick={() => { setEditDestId(d.id); setEditDestForm({ color: d.color, image_url: d.image_url || '', description: d.description || '', emoji: d.emoji || '📍', image_pos: d.image_pos || '' }); setModal('destination') }}
                           style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid #e5e7eb', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>
                           <Pencil size={13} />
                         </button>
@@ -890,6 +1046,12 @@ export default function Dashboard() {
             )}
           </>
         )}
+
+        {/* ── Homestays ── */}
+        {section === 'homestays' && renderListingSection('homestay', homestays)}
+
+        {/* ── Houseboats ── */}
+        {section === 'houseboats' && renderListingSection('houseboat', houseboats)}
 
         {/* ── Agencies ── */}
         {section === 'agencies' && (
@@ -1245,13 +1407,21 @@ export default function Dashboard() {
                       {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label style={S.label}>Destination</label>
-                    <select value={form.destination} onChange={e => { const d = destinations.find(d => d.name === e.target.value); setForm(f => ({ ...f, destination: e.target.value, badgeColor: d?.color ?? f.badgeColor })) }} style={{ ...S.input, cursor: 'pointer' }}>
-                      <option value="">Select destination</option>
-                      {destinations.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
-                    </select>
-                  </div>
+                  {(() => {
+                    const isHS = form.category === 'homestay'
+                    const isHB = form.category === 'houseboat'
+                    const optionList = isHS ? homestays : isHB ? houseboats : destinations
+                    const fieldLabel = isHS ? 'Homestay' : isHB ? 'Houseboat' : 'Destination'
+                    return (
+                      <div>
+                        <label style={S.label}>{fieldLabel}</label>
+                        <select value={form.destination} onChange={e => { const d = optionList.find(d => d.name === e.target.value); setForm(f => ({ ...f, destination: e.target.value, badgeColor: d?.color ?? f.badgeColor })) }} style={{ ...S.input, cursor: 'pointer' }}>
+                          <option value="">Select {fieldLabel.toLowerCase()}</option>
+                          {optionList.map(d => <option key={d.id} value={d.name}>{d.emoji ? `${d.emoji} ` : ''}{d.name}</option>)}
+                        </select>
+                      </div>
+                    )
+                  })()}
                   <div>
                     <label style={S.label}>Duration</label>
                     <input value={form.duration} onChange={e => setForm(f => ({ ...f, duration: e.target.value }))} style={S.input} placeholder="e.g. 3 Days & 2 Nights" />
@@ -1271,6 +1441,15 @@ export default function Dashboard() {
                   <div>
                     <label style={S.label}>Price per Child (₹)</label>
                     <input type="number" value={form.childPrice} onChange={e => setForm(f => ({ ...f, childPrice: e.target.value }))} style={S.input} />
+                  </div>
+                  <div>
+                    <label style={S.label}>Child Age Range</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input type="number" min="0" value={form.childAgeMin} onChange={e => setForm(f => ({ ...f, childAgeMin: e.target.value }))} style={S.input} placeholder="2" />
+                      <span style={{ color: '#9ca3af', fontSize: 13 }}>to</span>
+                      <input type="number" min="0" value={form.childAgeMax} onChange={e => setForm(f => ({ ...f, childAgeMax: e.target.value }))} style={S.input} placeholder="11" />
+                      <span style={{ color: '#9ca3af', fontSize: 13 }}>yrs</span>
+                    </div>
                   </div>
                   <div style={{ gridColumn: '1/-1', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                     <div>
@@ -1364,7 +1543,7 @@ export default function Dashboard() {
                       <div style={{ marginBottom: 12 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 5 }}>Day Image URL (optional)</div>
                         <input value={day.image || ''} onChange={e => itinChange(di, 'image', e.target.value)} style={{ ...S.input, fontSize: 12 }} placeholder="https://..." />
-                        {day.image && <img src={day.image} alt={`Day ${day.day}`} onError={e => e.target.style.display = 'none'} style={{ marginTop: 5, width: '100%', height: 60, objectFit: 'cover', borderRadius: 7 }} />}
+                        <ImagePositioner src={day.image} value={day.imagePos} onChange={v => itinChange(di, 'imagePos', v)} height={100} rounded={7} />
                       </div>
                       {/* Activities */}
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8 }}>Activities / Schedule</div>
@@ -1420,11 +1599,11 @@ export default function Dashboard() {
 
               {!showPreview && tab === 'media' && (
                 <div>
-                  {[{ l: 'Card Image URL', f: 'image', ph: 'https://images.unsplash.com/...' }, { l: 'Hero Image URL', f: 'heroImage', ph: 'Large image for detail page' }].map(({ l, f, ph }) => (
+                  {[{ l: 'Card Image URL', f: 'image', ph: 'https://images.unsplash.com/...', h: 140 }, { l: 'Hero Image URL', f: 'heroImage', ph: 'Large image for detail page', h: 180 }].map(({ l, f, ph, h }) => (
                     <div key={f} style={{ marginBottom: 14 }}>
                       <label style={S.label}>{l}</label>
                       <input value={form[f] || ''} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))} style={S.input} placeholder={ph} />
-                      {form[f] && <img src={form[f]} alt="preview" onError={e => e.target.style.display = 'none'} style={{ marginTop: 6, width: '100%', height: 80, objectFit: 'cover', borderRadius: 8 }} />}
+                      <ImagePositioner src={form[f]} value={form[`${f}Pos`]} onChange={v => setForm(p => ({ ...p, [`${f}Pos`]: v }))} height={h} />
                     </div>
                   ))}
 
@@ -1498,7 +1677,7 @@ export default function Dashboard() {
                                 ? <span style={{ width: 11, height: 11, border: `2px solid ${d.featured !== false ? '#bbf7d0' : '#e5e7eb'}`, borderTop: `2px solid ${d.featured !== false ? '#22c55e' : '#9ca3af'}`, borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} />
                                 : <Eye size={12} />}
                             </button>
-                            <button onClick={() => { if (editDestId === d.id) { setEditDestId(null); return }; setEditDestId(d.id); setEditDestForm({ color: d.color, image_url: d.image_url || '', description: d.description || '', emoji: d.emoji || '📍' }) }} style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid #e5e7eb', background: editDestId === d.id ? '#fff5ef' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: editDestId === d.id ? '#e8520a' : '#9ca3af' }}><Pencil size={12} /></button>
+                            <button onClick={() => { if (editDestId === d.id) { setEditDestId(null); return }; setEditDestId(d.id); setEditDestForm({ color: d.color, image_url: d.image_url || '', description: d.description || '', emoji: d.emoji || '📍', image_pos: d.image_pos || '' }) }} style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid #e5e7eb', background: editDestId === d.id ? '#fff5ef' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: editDestId === d.id ? '#e8520a' : '#9ca3af' }}><Pencil size={12} /></button>
                             <button onClick={() => handleDeleteDestination(d.id, d.name)} style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid #fee2e2', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}><Trash2 size={12} /></button>
                           </div>
                         </div>
@@ -1508,7 +1687,7 @@ export default function Dashboard() {
                               <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={editDestForm.emoji} onChange={e => setEditDestForm(f => ({ ...f, emoji: e.target.value }))} style={{ ...S.input, fontSize: 18, textAlign: 'center' }} maxLength={2} /></div>
                               <div><label style={{ ...S.label, marginBottom: 4 }}>Color</label><input type="color" value={editDestForm.color} onChange={e => setEditDestForm(f => ({ ...f, color: e.target.value }))} style={{ width: 50, height: 42, borderRadius: 8, border: '1.5px solid #e5e7eb', cursor: 'pointer', padding: 2 }} /></div>
                             </div>
-                            <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Image URL</label><input value={editDestForm.image_url} onChange={e => setEditDestForm(f => ({ ...f, image_url: e.target.value }))} style={S.input} /></div>
+                            <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Image URL</label><input value={editDestForm.image_url} onChange={e => setEditDestForm(f => ({ ...f, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={editDestForm.image_url} value={editDestForm.image_pos} onChange={v => setEditDestForm(f => ({ ...f, image_pos: v }))} height={120} /></div>
                             <div style={{ marginBottom: 10 }}><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={editDestForm.description} onChange={e => setEditDestForm(f => ({ ...f, description: e.target.value }))} style={S.input} /></div>
                             <div style={{ display: 'flex', gap: 8 }}>
                               <button onClick={() => setEditDestId(null)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
@@ -1530,7 +1709,7 @@ export default function Dashboard() {
                 <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={newDest.emoji} onChange={e => setNewDest(d => ({ ...d, emoji: e.target.value }))} style={{ ...S.input, textAlign: 'center', fontSize: 18 }} maxLength={2} /></div>
                 <div><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={newDest.description} onChange={e => setNewDest(d => ({ ...d, description: e.target.value }))} style={S.input} /></div>
               </div>
-              <div style={{ marginBottom: 4 }}><label style={{ ...S.label, marginBottom: 4 }}>Card Image URL</label><input value={newDest.image_url} onChange={e => setNewDest(d => ({ ...d, image_url: e.target.value }))} style={S.input} /></div>
+              <div style={{ marginBottom: 4 }}><label style={{ ...S.label, marginBottom: 4 }}>Card Image URL</label><input value={newDest.image_url} onChange={e => setNewDest(d => ({ ...d, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={newDest.image_url} value={newDest.image_pos} onChange={v => setNewDest(d => ({ ...d, image_pos: v }))} height={120} /></div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 20px', borderTop: '1px solid #f3f4f6', background: '#fafafa', flexShrink: 0 }}>
               <button onClick={() => setModal(null)} style={{ padding: '9px 18px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Close</button>
@@ -1541,6 +1720,92 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* ── Listings Modal (Homestays & Houseboats) ── */}
+      {modal === 'listing' && listingModalType && (() => {
+        const meta = LISTING_META[listingModalType]
+        const Icon = meta.icon
+        const items = listingModalType === 'houseboat' ? houseboats : homestays
+        return (
+          <div style={{ ...S.overlay, alignItems: 'center' }} onClick={e => e.target === e.currentTarget && setModal(null)}>
+            <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 500, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'linear-gradient(135deg,#2e3da8,#1c2575)', flexShrink: 0 }}>
+                <h2 style={{ fontWeight: 700, fontSize: 16, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}><Icon size={16} /> Manage {meta.plural}</h2>
+                <button onClick={() => setModal(null)} style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={15} /></button>
+              </div>
+              <div style={{ padding: 20, overflowY: 'auto', flex: 1 }}>
+                {items.length > 0 && (
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={S.label}>Existing {meta.plural}</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {items.map(d => (
+                        <div key={d.id} style={{ borderRadius: 12, border: '1px solid #f3f4f6', background: '#fafafa', overflow: 'hidden' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{ width: 14, height: 14, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                              <span style={{ fontWeight: 600, fontSize: 13 }}>{d.emoji || meta.emoji} {d.name}</span>
+                              {d.price && <span style={{ fontSize: 11, color: '#9ca3af' }}>{d.price}</span>}
+                            </div>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <button
+                                onClick={() => handleToggleListingFeatured(d.id, !(d.featured !== false))}
+                                disabled={listingVisLoading === d.id}
+                                title={d.featured !== false ? 'Shown on website (click to hide)' : 'Hidden from website (click to show)'}
+                                style={{ width: 28, height: 28, borderRadius: 7, border: `1px solid ${d.featured !== false ? '#bbf7d0' : '#e5e7eb'}`, background: d.featured !== false ? '#f0fdf4' : '#f9fafb', cursor: listingVisLoading === d.id ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: d.featured !== false ? '#22c55e' : '#d1d5db', opacity: listingVisLoading === d.id ? 0.7 : 1 }}>
+                                {listingVisLoading === d.id
+                                  ? <span style={{ width: 11, height: 11, border: `2px solid ${d.featured !== false ? '#bbf7d0' : '#e5e7eb'}`, borderTop: `2px solid ${d.featured !== false ? '#22c55e' : '#9ca3af'}`, borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} />
+                                  : <Eye size={12} />}
+                              </button>
+                              <button onClick={() => { if (editListingId === d.id) { setEditListingId(null); return }; setEditListingId(d.id); setEditListingForm({ color: d.color, image_url: d.image_url || '', description: d.description || '', location: d.location || '', price: d.price || '', emoji: d.emoji || meta.emoji, image_pos: d.image_pos || '' }) }} style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid #e5e7eb', background: editListingId === d.id ? '#fff5ef' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: editListingId === d.id ? '#e8520a' : '#9ca3af' }}><Pencil size={12} /></button>
+                              <button onClick={() => handleDeleteListing(d.id, d.name)} style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid #fee2e2', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f87171' }}><Trash2 size={12} /></button>
+                            </div>
+                          </div>
+                          {editListingId === d.id && (
+                            <div style={{ padding: '0 14px 14px', borderTop: '1px solid #f3f4f6' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, marginBottom: 8, marginTop: 12 }}>
+                                <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={editListingForm.emoji} onChange={e => setEditListingForm(f => ({ ...f, emoji: e.target.value }))} style={{ ...S.input, fontSize: 18, textAlign: 'center' }} maxLength={2} /></div>
+                                <div><label style={{ ...S.label, marginBottom: 4 }}>Color</label><input type="color" value={editListingForm.color} onChange={e => setEditListingForm(f => ({ ...f, color: e.target.value }))} style={{ width: 50, height: 42, borderRadius: 8, border: '1.5px solid #e5e7eb', cursor: 'pointer', padding: 2 }} /></div>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                                <div><label style={{ ...S.label, marginBottom: 4 }}>Location</label><input value={editListingForm.location} onChange={e => setEditListingForm(f => ({ ...f, location: e.target.value }))} style={S.input} placeholder="e.g. Alleppey" /></div>
+                                <div><label style={{ ...S.label, marginBottom: 4 }}>Price</label><input value={editListingForm.price} onChange={e => setEditListingForm(f => ({ ...f, price: e.target.value }))} style={S.input} placeholder="e.g. ₹3,500/night" /></div>
+                              </div>
+                              <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Image URL</label><input value={editListingForm.image_url} onChange={e => setEditListingForm(f => ({ ...f, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={editListingForm.image_url} value={editListingForm.image_pos} onChange={v => setEditListingForm(f => ({ ...f, image_pos: v }))} height={120} /></div>
+                              <div style={{ marginBottom: 10 }}><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={editListingForm.description} onChange={e => setEditListingForm(f => ({ ...f, description: e.target.value }))} style={S.input} /></div>
+                              <div style={{ display: 'flex', gap: 8 }}>
+                                <button onClick={() => setEditListingId(null)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                                <button onClick={() => handleUpdateListing(d.id)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#2e3da8,#1c2575)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Save</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <label style={S.label}>Add New {meta.label}</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, marginBottom: 8 }}>
+                  <input value={newListing.name} onChange={e => setNewListing(d => ({ ...d, name: e.target.value }))} style={S.input} placeholder={listingModalType === 'houseboat' ? 'e.g. Royal Kettuvallam' : 'e.g. Backwater Villa'} onKeyDown={e => e.key === 'Enter' && handleAddListing(listingModalType)} />
+                  <input type="color" value={newListing.color} onChange={e => setNewListing(d => ({ ...d, color: e.target.value }))} style={{ width: 50, height: 42, borderRadius: 8, border: '1.5px solid #e5e7eb', cursor: 'pointer', padding: 2 }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+                  <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={newListing.emoji} onChange={e => setNewListing(d => ({ ...d, emoji: e.target.value }))} style={{ ...S.input, textAlign: 'center', fontSize: 18 }} maxLength={2} /></div>
+                  <div><label style={{ ...S.label, marginBottom: 4 }}>Location</label><input value={newListing.location} onChange={e => setNewListing(d => ({ ...d, location: e.target.value }))} style={S.input} placeholder="e.g. Alleppey" /></div>
+                  <div><label style={{ ...S.label, marginBottom: 4 }}>Price</label><input value={newListing.price} onChange={e => setNewListing(d => ({ ...d, price: e.target.value }))} style={S.input} placeholder="₹/night" /></div>
+                </div>
+                <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={newListing.description} onChange={e => setNewListing(d => ({ ...d, description: e.target.value }))} style={S.input} /></div>
+                <div style={{ marginBottom: 4 }}><label style={{ ...S.label, marginBottom: 4 }}>Card Image URL</label><input value={newListing.image_url} onChange={e => setNewListing(d => ({ ...d, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={newListing.image_url} value={newListing.image_pos} onChange={v => setNewListing(d => ({ ...d, image_pos: v }))} height={120} /></div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 20px', borderTop: '1px solid #f3f4f6', background: '#fafafa', flexShrink: 0 }}>
+                <button onClick={() => setModal(null)} style={{ padding: '9px 18px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Close</button>
+                <button onClick={() => handleAddListing(listingModalType)} disabled={listingSaving} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', cursor: listingSaving ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg,#2e3da8,#1c2575)', color: '#fff', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, opacity: listingSaving ? 0.7 : 1 }}>
+                  {listingSaving ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite', display: 'inline-block' }} /> Adding...</> : <><Plus size={14} /> Add</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Confirm Dialog ── */}
       {confirm && (

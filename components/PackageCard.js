@@ -26,7 +26,7 @@ export default function PackageCard({ pkg, phone = '919846034558' }) {
           <img
             src={pkg.image}
             alt={pkg.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: pkg.imagePos || 'center', transition: 'transform 0.5s ease' }}
             onError={e => { e.target.src = 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=700&q=80' }}
           />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.25), transparent)' }} />

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx eslint *)",
+      "Bash(grep -v \"no-img-element\\\\|set-state-in-effect\\\\|Using \\\\`<img>\\\\`\\\\|Effects are intended\\\\|^\\\\* \\\\|cascading renders\\\\|Subscribe for\\\\|Update external\\\\|react.dev\\\\|^$\\\\|^\\\\s*[0-9]* |^\\\\s*>\")"
+    ]
+  }
+}

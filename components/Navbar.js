@@ -19,6 +19,8 @@ export default function Navbar({ big = false }) {
   const navLinks = [
     { label: 'Home',         href: '/' },
     { label: 'Destinations', href: '/#destinations' },
+    { label: 'Homestays',    href: '/#homestays' },
+    { label: 'Houseboats',   href: '/#houseboats' },
     { label: 'Packages',     href: '/#packages' },
     { label: 'About',        href: '/#about' },
     { label: 'Contact',      href: '/#contact' },

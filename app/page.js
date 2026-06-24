@@ -12,6 +12,65 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
+function ListingSection({ id, eyebrow, titlePre, titleHi, subtitle, items, showAll, setShowAll, whatsapp, bg, defaultEmoji, defaultImg }) {
+  const visible = items.filter(i => i.featured !== false)
+  if (visible.length === 0) return null
+  return (
+    <section id={id} style={{ padding: '80px 24px', background: bg }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#e8520a', marginBottom: 10 }}>
+            {eyebrow}
+          </p>
+          <h2 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#111', marginBottom: 12 }}>
+            {titlePre} <span style={{ color: '#e8520a' }}>{titleHi}</span>
+          </h2>
+          <p style={{ color: '#6b7280', maxWidth: 500, margin: '0 auto', lineHeight: 1.6 }}>{subtitle}</p>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 24 }}>
+          {(showAll ? visible : visible.slice(0, 4)).map(item => (
+            <a
+              key={item.id}
+              href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${item.name}". Please share details.`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', height: 280, flex: '1 1 280px', maxWidth: 380, cursor: 'pointer', textDecoration: 'none', display: 'block', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', transition: 'transform 0.3s, box-shadow 0.3s' }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.25)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.15)' }}
+            >
+              <img src={item.image_url || defaultImg} alt={item.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: item.image_pos || 'center', transition: 'transform 0.5s' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%)' }} />
+              {item.price && (
+                <span style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.95)', color: '#111', fontWeight: 700, fontSize: 12, padding: '5px 12px', borderRadius: 999 }}>{item.price}</span>
+              )}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                  <MapPin size={13} style={{ color: item.color }} />
+                  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: item.color }}>{item.emoji || defaultEmoji} {item.location || 'Enquire'}</span>
+                </div>
+                <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 26, color: '#fff', marginBottom: 6, lineHeight: 1.1 }}>{item.name}</h3>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>{item.description || ''}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        {visible.length > 4 && (
+          <div style={{ textAlign: 'center', marginTop: 36 }}>
+            <button
+              onClick={() => setShowAll(s => !s)}
+              style={{ padding: '12px 32px', borderRadius: 999, border: '1.5px solid #e8520a', background: '#fff', color: '#e8520a', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+            >
+              {showAll ? 'Show less' : `Show more (${visible.length - 4})`}
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
 const CATEGORY_TABS = [
   { value: 'all',      label: 'All Packages' },
   { value: 'package',  label: 'Packages' },
@@ -26,6 +85,10 @@ export default function HomePage() {
   const [activeDest, setActiveDest] = useState('all')
   const [destinations, setDestinations] = useState([])
   const [showAllDest, setShowAllDest] = useState(false)
+  const [homestays, setHomestays] = useState([])
+  const [houseboats, setHouseboats] = useState([])
+  const [showAllHS, setShowAllHS] = useState(false)
+  const [showAllHB, setShowAllHB] = useState(false)
   const { packages, loaded: pkgsLoaded } = usePackages()
   const phone = usePhone()
   const whatsapp = useWhatsapp()
@@ -35,6 +98,14 @@ export default function HomePage() {
     fetch('/api/destinations')
       .then(r => r.ok ? r.json() : [])
       .then(setDestinations)
+      .catch(() => {})
+    fetch('/api/listings?type=homestay')
+      .then(r => r.ok ? r.json() : [])
+      .then(setHomestays)
+      .catch(() => {})
+    fetch('/api/listings?type=houseboat')
+      .then(r => r.ok ? r.json() : [])
+      .then(setHouseboats)
       .catch(() => {})
   }, [])
 
@@ -67,7 +138,7 @@ export default function HomePage() {
           </div>
 
           {visibleDestinations.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 24 }}>
               {(showAllDest ? visibleDestinations : visibleDestinations.slice(0, 4)).map(dest => (
                 <button
                   key={dest.id}
@@ -75,11 +146,11 @@ export default function HomePage() {
                     setActiveDest(dest.name)
                     document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })
                   }}
-                  style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', height: 280, cursor: 'pointer', border: 'none', padding: 0, boxShadow: '0 8px 30px rgba(0,0,0,0.15)', transition: 'transform 0.3s, box-shadow 0.3s' }}
+                  style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', height: 280, flex: '1 1 280px', maxWidth: 380, cursor: 'pointer', border: 'none', padding: 0, boxShadow: '0 8px 30px rgba(0,0,0,0.15)', transition: 'transform 0.3s, box-shadow 0.3s' }}
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.25)' }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.15)' }}
                 >
-                  <img src={dest.image_url || 'https://images.unsplash.com/photo-1637066742971-726bee8d9f56?q=80'} alt={dest.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }} />
+                  <img src={dest.image_url || 'https://images.unsplash.com/photo-1637066742971-726bee8d9f56?q=80'} alt={dest.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: dest.image_pos || 'center', transition: 'transform 0.5s' }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%)' }} />
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, textAlign: 'left' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
@@ -106,6 +177,38 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {/* ── Homestays ── */}
+      <ListingSection
+        id="homestays"
+        eyebrow="Stay Local"
+        titlePre="Cozy"
+        titleHi="Homestays"
+        subtitle="Authentic stays with local families — comfort, home-cooked food & warm Kerala hospitality."
+        items={homestays}
+        showAll={showAllHS}
+        setShowAll={setShowAllHS}
+        whatsapp={whatsapp}
+        bg="#fff"
+        defaultEmoji="🏡"
+        defaultImg="https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&q=80"
+      />
+
+      {/* ── Houseboats ── */}
+      <ListingSection
+        id="houseboats"
+        eyebrow="On The Water"
+        titlePre="Backwater"
+        titleHi="Houseboats"
+        subtitle="Drift through Kerala's tranquil backwaters aboard a traditional kettuvallam, in full comfort."
+        items={houseboats}
+        showAll={showAllHB}
+        setShowAll={setShowAllHB}
+        whatsapp={whatsapp}
+        bg="#f0ebe1"
+        defaultEmoji="🛶"
+        defaultImg="https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80"
+      />
 
       {/* ── Packages ── */}
       <section id="packages" style={{ padding: '80px 24px', background: '#fff' }}>

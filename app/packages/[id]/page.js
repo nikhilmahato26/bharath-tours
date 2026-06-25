@@ -291,7 +291,7 @@ export default function PackagePage({ params }) {
                           <div style={{ padding: '0 16px 20px', borderTop: '1px solid #f9f0eb' }}>
                             {day.image && (
                               <img src={day.image} alt={day.title} onError={e => e.target.style.display = 'none'}
-                                style={{ width: '100%', height: 220, objectFit: 'cover', objectPosition: day.imagePos || 'center', borderRadius: 10, marginTop: 14, marginBottom: 14 }} />
+                                style={{ width: '100%', height: isMobile ? 280 : 440, objectFit: 'cover', objectPosition: day.imagePos || 'center', borderRadius: 10, marginTop: 14, marginBottom: 14 }} />
                             )}
                             {day.description && (
                               <p style={{ color: '#6b7280', fontSize: 13, lineHeight: 1.7, marginTop: 14, marginBottom: acts.length ? 20 : 0, padding: '0 2px' }}>{day.description}</p>

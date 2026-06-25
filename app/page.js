@@ -41,9 +41,6 @@ function ListingSection({ id, eyebrow, titlePre, titleHi, subtitle, items, showA
             >
               <img src={item.image_url || defaultImg} alt={item.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: item.image_pos || 'center', transition: 'transform 0.5s' }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%)' }} />
-              {item.price && (
-                <span style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.95)', color: '#111', fontWeight: 700, fontSize: 12, padding: '5px 12px', borderRadius: 999 }}>{item.price}</span>
-              )}
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, textAlign: 'left' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
                   <MapPin size={13} style={{ color: item.color }} />

@@ -614,7 +614,6 @@ export default function Dashboard() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>{d.emoji || meta.emoji} {d.name}</span>
-                        {d.price && <span style={{ fontSize: 12, fontWeight: 700, color: '#e8520a' }}>{d.price}</span>}
                       </div>
                       <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>
                         {d.location && <span style={{ color: '#6b7280' }}>📍 {d.location}</span>}
@@ -1744,7 +1743,6 @@ export default function Dashboard() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                               <div style={{ width: 14, height: 14, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
                               <span style={{ fontWeight: 600, fontSize: 13 }}>{d.emoji || meta.emoji} {d.name}</span>
-                              {d.price && <span style={{ fontSize: 11, color: '#9ca3af' }}>{d.price}</span>}
                             </div>
                             <div style={{ display: 'flex', gap: 4 }}>
                               <button
@@ -1766,9 +1764,8 @@ export default function Dashboard() {
                                 <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={editListingForm.emoji} onChange={e => setEditListingForm(f => ({ ...f, emoji: e.target.value }))} style={{ ...S.input, fontSize: 18, textAlign: 'center' }} maxLength={2} /></div>
                                 <div><label style={{ ...S.label, marginBottom: 4 }}>Color</label><input type="color" value={editListingForm.color} onChange={e => setEditListingForm(f => ({ ...f, color: e.target.value }))} style={{ width: 50, height: 42, borderRadius: 8, border: '1.5px solid #e5e7eb', cursor: 'pointer', padding: 2 }} /></div>
                               </div>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                                <div><label style={{ ...S.label, marginBottom: 4 }}>Location</label><input value={editListingForm.location} onChange={e => setEditListingForm(f => ({ ...f, location: e.target.value }))} style={S.input} placeholder="e.g. Alleppey" /></div>
-                                <div><label style={{ ...S.label, marginBottom: 4 }}>Price</label><input value={editListingForm.price} onChange={e => setEditListingForm(f => ({ ...f, price: e.target.value }))} style={S.input} placeholder="e.g. ₹3,500/night" /></div>
+                              <div style={{ marginBottom: 8 }}>
+                                <label style={{ ...S.label, marginBottom: 4 }}>Location</label><input value={editListingForm.location} onChange={e => setEditListingForm(f => ({ ...f, location: e.target.value }))} style={S.input} placeholder="e.g. Alleppey" />
                               </div>
                               <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Image URL</label><input value={editListingForm.image_url} onChange={e => setEditListingForm(f => ({ ...f, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={editListingForm.image_url} value={editListingForm.image_pos} onChange={v => setEditListingForm(f => ({ ...f, image_pos: v }))} height={120} /></div>
                               <div style={{ marginBottom: 10 }}><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={editListingForm.description} onChange={e => setEditListingForm(f => ({ ...f, description: e.target.value }))} style={S.input} /></div>
@@ -1788,10 +1785,9 @@ export default function Dashboard() {
                   <input value={newListing.name} onChange={e => setNewListing(d => ({ ...d, name: e.target.value }))} style={S.input} placeholder={listingModalType === 'houseboat' ? 'e.g. Royal Kettuvallam' : 'e.g. Backwater Villa'} onKeyDown={e => e.key === 'Enter' && handleAddListing(listingModalType)} />
                   <input type="color" value={newListing.color} onChange={e => setNewListing(d => ({ ...d, color: e.target.value }))} style={{ width: 50, height: 42, borderRadius: 8, border: '1.5px solid #e5e7eb', cursor: 'pointer', padding: 2 }} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
-                  <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={newListing.emoji} onChange={e => setNewListing(d => ({ ...d, emoji: e.target.value }))} style={{ ...S.input, textAlign: 'center', fontSize: 18 }} maxLength={2} /></div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 8, marginBottom: 8 }}>
+                  <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={newListing.emoji} onChange={e => setNewListing(d => ({ ...d, emoji: e.target.value }))} style={{ ...S.input, textAlign: 'center', fontSize: 18, width: 60 }} maxLength={2} /></div>
                   <div><label style={{ ...S.label, marginBottom: 4 }}>Location</label><input value={newListing.location} onChange={e => setNewListing(d => ({ ...d, location: e.target.value }))} style={S.input} placeholder="e.g. Alleppey" /></div>
-                  <div><label style={{ ...S.label, marginBottom: 4 }}>Price</label><input value={newListing.price} onChange={e => setNewListing(d => ({ ...d, price: e.target.value }))} style={S.input} placeholder="₹/night" /></div>
                 </div>
                 <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={newListing.description} onChange={e => setNewListing(d => ({ ...d, description: e.target.value }))} style={S.input} /></div>
                 <div style={{ marginBottom: 4 }}><label style={{ ...S.label, marginBottom: 4 }}>Card Image URL</label><input value={newListing.image_url} onChange={e => setNewListing(d => ({ ...d, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={newListing.image_url} value={newListing.image_pos} onChange={v => setNewListing(d => ({ ...d, image_pos: v }))} height={120} /></div>

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
-function ListingSection({ id, eyebrow, titlePre, titleHi, subtitle, items, showAll, setShowAll, whatsapp, bg, defaultEmoji, defaultImg }) {
+function ListingSection({ id, eyebrow, titlePre, titleHi, subtitle, items, showAll, setShowAll, onSelect, bg, defaultEmoji, defaultImg }) {
   const visible = items.filter(i => i.featured !== false)
   if (visible.length === 0) return null
   return (
@@ -30,12 +30,10 @@ function ListingSection({ id, eyebrow, titlePre, titleHi, subtitle, items, showA
 
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 24 }}>
           {(showAll ? visible : visible.slice(0, 4)).map(item => (
-            <a
+            <button
               key={item.id}
-              href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${item.name}". Please share details.`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', height: 280, flex: '1 1 280px', maxWidth: 380, cursor: 'pointer', textDecoration: 'none', display: 'block', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', transition: 'transform 0.3s, box-shadow 0.3s' }}
+              onClick={() => onSelect(item.name)}
+              style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', height: 280, flex: '1 1 280px', maxWidth: 380, cursor: 'pointer', border: 'none', padding: 0, textAlign: 'left', display: 'block', boxShadow: '0 8px 30px rgba(0,0,0,0.15)', transition: 'transform 0.3s, box-shadow 0.3s' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.25)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.15)' }}
             >
@@ -49,7 +47,7 @@ function ListingSection({ id, eyebrow, titlePre, titleHi, subtitle, items, showA
                 <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 26, color: '#fff', marginBottom: 6, lineHeight: 1.1 }}>{item.name}</h3>
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>{item.description || ''}</p>
               </div>
-            </a>
+            </button>
           ))}
         </div>
 
@@ -113,6 +111,12 @@ export default function HomePage() {
     const matchDest = activeDest === 'all' || p.destination === activeDest
     return matchCat && matchDest
   })
+
+  const selectListing = (category, name) => {
+    setActiveCategory(category)
+    setActiveDest(name)
+    document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   return (
     <main style={{ minHeight: '100vh', background: '#fff' }}>
@@ -185,7 +189,7 @@ export default function HomePage() {
         items={homestays}
         showAll={showAllHS}
         setShowAll={setShowAllHS}
-        whatsapp={whatsapp}
+        onSelect={name => selectListing('homestay', name)}
         bg="#fff"
         defaultEmoji="🏡"
         defaultImg="https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&q=80"
@@ -201,7 +205,7 @@ export default function HomePage() {
         items={houseboats}
         showAll={showAllHB}
         setShowAll={setShowAllHB}
-        whatsapp={whatsapp}
+        onSelect={name => selectListing('houseboat', name)}
         bg="#f0ebe1"
         defaultEmoji="🛶"
         defaultImg="https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80"

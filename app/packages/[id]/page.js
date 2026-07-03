@@ -170,7 +170,7 @@ export default function PackagePage({ params }) {
       </div>
 
       {/* Body */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '24px 16px 100px' : '48px 24px 80px' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '24px 16px 130px' : '48px 24px 80px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,2fr) minmax(0,1fr)', gap: isMobile ? 32 : 40 }}>
 
           {/* Left column */}
@@ -588,11 +588,18 @@ export default function PackagePage({ params }) {
 
       {/* Mobile sticky bottom bar */}
       {isMobile && (
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#fff', borderTop: '1px solid #f3f4f6', padding: '10px 16px', display: 'flex', gap: 10, alignItems: 'center', boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#fff', borderTop: '1px solid #f3f4f6', boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, padding: '7px 16px', background: '#fff7ed', borderBottom: '1px solid #fde9d3' }}>
+            <Info size={12} style={{ color: '#e8520a', flexShrink: 0, marginTop: 1 }} />
+            <span style={{ fontSize: 11, color: '#9a3412', lineHeight: 1.4 }}>
+              {Number(pkg.childPrice) > 0 ? `${fmt(pkg.childPrice)}/child · ` : ''}Rate may change based on your customization.
+            </span>
+          </div>
+          <div style={{ padding: '10px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, color: '#9ca3af', textDecoration: 'line-through' }}>{fmt(pkg.originalPrice)}</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: '#e8520a' }}>
-              {fmt(pkg.salePrice)}<span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 400 }}>/person</span>
+              {fmt(pkg.salePrice)}<span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 400 }}>/{Number(pkg.childPrice) > 0 ? 'adult' : 'person'}</span>
             </div>
           </div>
           <a
@@ -608,6 +615,7 @@ export default function PackagePage({ params }) {
           >
             <MessageCircle size={14} /> WhatsApp
           </a>
+          </div>
         </div>
       )}
     </main>

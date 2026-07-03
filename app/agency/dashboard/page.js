@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import TagSelector from '@/components/TagSelector'
 import PackagePreview from '@/components/PackagePreview'
 import HomestayFields from '@/components/HomestayFields'
-import ImagePositioner from '@/components/ImagePositioner'
+import ImageUploader from '@/components/ImageUploader'
 
 function fmtRange(start, end) {
   if (!start && !end) return ''
@@ -607,9 +607,8 @@ export default function AgencyDashboard() {
                       </div>
                       {/* Day image */}
                       <div style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 5 }}>Day Image URL (optional)</div>
-                        <input value={day.image || ''} onChange={e => itinChange(di, 'image', e.target.value)} style={{ ...S.input, fontSize: 12 }} placeholder="https://..." />
-                        <ImagePositioner src={day.image} value={day.imagePos} onChange={v => itinChange(di, 'imagePos', v)} height={100} rounded={7} />
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 5 }}>Day Image (optional)</div>
+                        <ImageUploader url={day.image || ''} onUrlChange={v => itinChange(di, 'image', v)} pos={day.imagePos} onPosChange={v => itinChange(di, 'imagePos', v)} height={180} rounded={7} />
                       </div>
                       {/* Activities */}
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8 }}>Activities / Schedule</div>
@@ -666,11 +665,10 @@ export default function AgencyDashboard() {
 
               {!showPreview && tab === 'media' && (
                 <div>
-                  {[{ l: 'Card Image URL', f: 'image', ph: 'https://images.unsplash.com/...', h: 140 }, { l: 'Hero Image URL', f: 'heroImage', ph: 'Larger image for the package detail page', h: 180 }].map(({ l, f, ph, h }) => (
+                  {[{ l: 'Card Image', f: 'image', h: 260 }, { l: 'Hero Image', f: 'heroImage', h: 380 }].map(({ l, f, h }) => (
                     <div key={f} style={{ marginBottom: 14 }}>
                       <label style={S.label}>{l}</label>
-                      <input value={form[f] || ''} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))} style={S.input} placeholder={ph} />
-                      <ImagePositioner src={form[f]} value={form[`${f}Pos`]} onChange={v => setForm(p => ({ ...p, [`${f}Pos`]: v }))} height={h} />
+                      <ImageUploader url={form[f] || ''} onUrlChange={v => setForm(p => ({ ...p, [f]: v }))} pos={form[`${f}Pos`]} onPosChange={v => setForm(p => ({ ...p, [`${f}Pos`]: v }))} height={h} />
                     </div>
                   ))}
 

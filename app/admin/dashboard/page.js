@@ -6,7 +6,7 @@ import { invalidateSettingsCache } from '@/hooks/useSettings'
 import TagSelector from '@/components/TagSelector'
 import PackagePreview from '@/components/PackagePreview'
 import HomestayFields from '@/components/HomestayFields'
-import ImagePositioner from '@/components/ImagePositioner'
+import ImageUploader from '@/components/ImageUploader'
 import {
   Plus, Pencil, Copy, Trash2, LogOut, Eye, X, Check, ExternalLink, AlertTriangle,
   Package, MapPin, Inbox, Settings, Phone, MessageCircle, Mail, Calendar,
@@ -1540,9 +1540,8 @@ export default function Dashboard() {
                       </div>
                       {/* Day image */}
                       <div style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 5 }}>Day Image URL (optional)</div>
-                        <input value={day.image || ''} onChange={e => itinChange(di, 'image', e.target.value)} style={{ ...S.input, fontSize: 12 }} placeholder="https://..." />
-                        <ImagePositioner src={day.image} value={day.imagePos} onChange={v => itinChange(di, 'imagePos', v)} height={100} rounded={7} />
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 5 }}>Day Image (optional)</div>
+                        <ImageUploader url={day.image || ''} onUrlChange={v => itinChange(di, 'image', v)} pos={day.imagePos} onPosChange={v => itinChange(di, 'imagePos', v)} height={180} rounded={7} />
                       </div>
                       {/* Activities */}
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', marginBottom: 8 }}>Activities / Schedule</div>
@@ -1598,11 +1597,10 @@ export default function Dashboard() {
 
               {!showPreview && tab === 'media' && (
                 <div>
-                  {[{ l: 'Card Image URL', f: 'image', ph: 'https://images.unsplash.com/...', h: 140 }, { l: 'Hero Image URL', f: 'heroImage', ph: 'Large image for detail page', h: 180 }].map(({ l, f, ph, h }) => (
+                  {[{ l: 'Card Image', f: 'image', h: 260 }, { l: 'Hero Image', f: 'heroImage', h: 380 }].map(({ l, f, h }) => (
                     <div key={f} style={{ marginBottom: 14 }}>
                       <label style={S.label}>{l}</label>
-                      <input value={form[f] || ''} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))} style={S.input} placeholder={ph} />
-                      <ImagePositioner src={form[f]} value={form[`${f}Pos`]} onChange={v => setForm(p => ({ ...p, [`${f}Pos`]: v }))} height={h} />
+                      <ImageUploader url={form[f] || ''} onUrlChange={v => setForm(p => ({ ...p, [f]: v }))} pos={form[`${f}Pos`]} onPosChange={v => setForm(p => ({ ...p, [`${f}Pos`]: v }))} height={h} />
                     </div>
                   ))}
 
@@ -1686,7 +1684,7 @@ export default function Dashboard() {
                               <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={editDestForm.emoji} onChange={e => setEditDestForm(f => ({ ...f, emoji: e.target.value }))} style={{ ...S.input, fontSize: 18, textAlign: 'center' }} maxLength={2} /></div>
                               <div><label style={{ ...S.label, marginBottom: 4 }}>Color</label><input type="color" value={editDestForm.color} onChange={e => setEditDestForm(f => ({ ...f, color: e.target.value }))} style={{ width: 50, height: 42, borderRadius: 8, border: '1.5px solid #e5e7eb', cursor: 'pointer', padding: 2 }} /></div>
                             </div>
-                            <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Image URL</label><input value={editDestForm.image_url} onChange={e => setEditDestForm(f => ({ ...f, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={editDestForm.image_url} value={editDestForm.image_pos} onChange={v => setEditDestForm(f => ({ ...f, image_pos: v }))} height={120} /></div>
+                            <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Image</label><ImageUploader url={editDestForm.image_url} onUrlChange={v => setEditDestForm(f => ({ ...f, image_url: v }))} pos={editDestForm.image_pos} onPosChange={v => setEditDestForm(f => ({ ...f, image_pos: v }))} height={200} /></div>
                             <div style={{ marginBottom: 10 }}><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={editDestForm.description} onChange={e => setEditDestForm(f => ({ ...f, description: e.target.value }))} style={S.input} /></div>
                             <div style={{ display: 'flex', gap: 8 }}>
                               <button onClick={() => setEditDestId(null)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
@@ -1708,7 +1706,7 @@ export default function Dashboard() {
                 <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={newDest.emoji} onChange={e => setNewDest(d => ({ ...d, emoji: e.target.value }))} style={{ ...S.input, textAlign: 'center', fontSize: 18 }} maxLength={2} /></div>
                 <div><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={newDest.description} onChange={e => setNewDest(d => ({ ...d, description: e.target.value }))} style={S.input} /></div>
               </div>
-              <div style={{ marginBottom: 4 }}><label style={{ ...S.label, marginBottom: 4 }}>Card Image URL</label><input value={newDest.image_url} onChange={e => setNewDest(d => ({ ...d, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={newDest.image_url} value={newDest.image_pos} onChange={v => setNewDest(d => ({ ...d, image_pos: v }))} height={120} /></div>
+              <div style={{ marginBottom: 4 }}><label style={{ ...S.label, marginBottom: 4 }}>Card Image</label><ImageUploader url={newDest.image_url} onUrlChange={v => setNewDest(d => ({ ...d, image_url: v }))} pos={newDest.image_pos} onPosChange={v => setNewDest(d => ({ ...d, image_pos: v }))} height={200} /></div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 20px', borderTop: '1px solid #f3f4f6', background: '#fafafa', flexShrink: 0 }}>
               <button onClick={() => setModal(null)} style={{ padding: '9px 18px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Close</button>
@@ -1764,10 +1762,7 @@ export default function Dashboard() {
                                 <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={editListingForm.emoji} onChange={e => setEditListingForm(f => ({ ...f, emoji: e.target.value }))} style={{ ...S.input, fontSize: 18, textAlign: 'center' }} maxLength={2} /></div>
                                 <div><label style={{ ...S.label, marginBottom: 4 }}>Color</label><input type="color" value={editListingForm.color} onChange={e => setEditListingForm(f => ({ ...f, color: e.target.value }))} style={{ width: 50, height: 42, borderRadius: 8, border: '1.5px solid #e5e7eb', cursor: 'pointer', padding: 2 }} /></div>
                               </div>
-                              <div style={{ marginBottom: 8 }}>
-                                <label style={{ ...S.label, marginBottom: 4 }}>Location</label><input value={editListingForm.location} onChange={e => setEditListingForm(f => ({ ...f, location: e.target.value }))} style={S.input} placeholder="e.g. Alleppey" />
-                              </div>
-                              <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Image URL</label><input value={editListingForm.image_url} onChange={e => setEditListingForm(f => ({ ...f, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={editListingForm.image_url} value={editListingForm.image_pos} onChange={v => setEditListingForm(f => ({ ...f, image_pos: v }))} height={120} /></div>
+                              <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Image</label><ImageUploader url={editListingForm.image_url} onUrlChange={v => setEditListingForm(f => ({ ...f, image_url: v }))} pos={editListingForm.image_pos} onPosChange={v => setEditListingForm(f => ({ ...f, image_pos: v }))} height={200} /></div>
                               <div style={{ marginBottom: 10 }}><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={editListingForm.description} onChange={e => setEditListingForm(f => ({ ...f, description: e.target.value }))} style={S.input} /></div>
                               <div style={{ display: 'flex', gap: 8 }}>
                                 <button onClick={() => setEditListingId(null)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
@@ -1780,17 +1775,16 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
-                <label style={S.label}>Add New {meta.label}</label>
+                <label style={S.label}>Add New Destination</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, marginBottom: 8 }}>
                   <input value={newListing.name} onChange={e => setNewListing(d => ({ ...d, name: e.target.value }))} style={S.input} placeholder={listingModalType === 'houseboat' ? 'e.g. Royal Kettuvallam' : 'e.g. Backwater Villa'} onKeyDown={e => e.key === 'Enter' && handleAddListing(listingModalType)} />
                   <input type="color" value={newListing.color} onChange={e => setNewListing(d => ({ ...d, color: e.target.value }))} style={{ width: 50, height: 42, borderRadius: 8, border: '1.5px solid #e5e7eb', cursor: 'pointer', padding: 2 }} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 8, marginBottom: 8 }}>
-                  <div><label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={newListing.emoji} onChange={e => setNewListing(d => ({ ...d, emoji: e.target.value }))} style={{ ...S.input, textAlign: 'center', fontSize: 18, width: 60 }} maxLength={2} /></div>
-                  <div><label style={{ ...S.label, marginBottom: 4 }}>Location</label><input value={newListing.location} onChange={e => setNewListing(d => ({ ...d, location: e.target.value }))} style={S.input} placeholder="e.g. Alleppey" /></div>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ ...S.label, marginBottom: 4 }}>Emoji</label><input value={newListing.emoji} onChange={e => setNewListing(d => ({ ...d, emoji: e.target.value }))} style={{ ...S.input, textAlign: 'center', fontSize: 18, width: 60 }} maxLength={2} />
                 </div>
                 <div style={{ marginBottom: 8 }}><label style={{ ...S.label, marginBottom: 4 }}>Description</label><input value={newListing.description} onChange={e => setNewListing(d => ({ ...d, description: e.target.value }))} style={S.input} /></div>
-                <div style={{ marginBottom: 4 }}><label style={{ ...S.label, marginBottom: 4 }}>Card Image URL</label><input value={newListing.image_url} onChange={e => setNewListing(d => ({ ...d, image_url: e.target.value }))} style={S.input} /><ImagePositioner src={newListing.image_url} value={newListing.image_pos} onChange={v => setNewListing(d => ({ ...d, image_pos: v }))} height={120} /></div>
+                <div style={{ marginBottom: 4 }}><label style={{ ...S.label, marginBottom: 4 }}>Card Image</label><ImageUploader url={newListing.image_url} onUrlChange={v => setNewListing(d => ({ ...d, image_url: v }))} pos={newListing.image_pos} onPosChange={v => setNewListing(d => ({ ...d, image_pos: v }))} height={200} /></div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 20px', borderTop: '1px solid #f3f4f6', background: '#fafafa', flexShrink: 0 }}>
                 <button onClick={() => setModal(null)} style={{ padding: '9px 18px', borderRadius: 10, border: '1px solid #e5e7eb', background: '#fff', color: '#6b7280', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Close</button>

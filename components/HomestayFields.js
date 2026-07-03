@@ -1,6 +1,7 @@
 'use client'
 import { Plus, Trash2, X } from 'lucide-react'
 import TagSelector from '@/components/TagSelector'
+import ImageUploader from '@/components/ImageUploader'
 
 const NEARBY_TYPES = [
   { value: 'transport', label: 'Transport' },
@@ -89,9 +90,8 @@ export default function HomestayFields({ form, setForm, S, pkgOptions = {}, onOp
               {[0, 1, 2].map(idx => {
                 const val = (room.images || [])[idx] ?? (idx === 0 ? (room.image || '') : '')
                 return (
-                  <div key={idx} style={{ marginBottom: 8 }}>
-                    <input value={val} onChange={e => roomImageChange(i, idx, e.target.value)} style={S.input} placeholder={`Image ${idx + 1} URL`} />
-                    {val && <img src={val} alt="" onError={e => { e.target.style.display = 'none' }} style={{ marginTop: 6, width: '100%', height: 70, objectFit: 'cover', borderRadius: 8 }} />}
+                  <div key={idx} style={{ marginBottom: 10 }}>
+                    <ImageUploader url={val} onUrlChange={v => roomImageChange(i, idx, v)} height={140} />
                   </div>
                 )
               })}

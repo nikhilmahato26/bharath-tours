@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
-function ListingSection({ id, eyebrow, titlePre, titleHi, subtitle, items, showAll, setShowAll, onSelect, bg, defaultEmoji, defaultImg }) {
+function ListingSection({ id, eyebrow, titlePre, titleHi, subtitle, items, showAll, setShowAll, onSelect, countFor, bg, defaultEmoji, defaultImg }) {
   const visible = items.filter(i => i.featured !== false)
   if (visible.length === 0) return null
   return (
@@ -39,6 +39,7 @@ function ListingSection({ id, eyebrow, titlePre, titleHi, subtitle, items, showA
             >
               <img src={item.image_url || defaultImg} alt={item.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: item.image_pos || 'center', transition: 'transform 0.5s' }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%)' }} />
+              <span style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.92)', color: '#111', fontWeight: 700, fontSize: 12, padding: '5px 12px', borderRadius: 999 }}>{countFor(item.name)} package{countFor(item.name) !== 1 ? 's' : ''}</span>
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, textAlign: 'left' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
                   <MapPin size={13} style={{ color: item.color }} />
@@ -118,6 +119,8 @@ export default function HomePage() {
     document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  const pkgCount = (name) => packages.filter(p => p.destination === name).length
+
   return (
     <main style={{ minHeight: '100vh', background: '#fff' }}>
       <Navbar />
@@ -153,6 +156,7 @@ export default function HomePage() {
                 >
                   <img src={dest.image_url || 'https://images.unsplash.com/photo-1637066742971-726bee8d9f56?q=80'} alt={dest.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: dest.image_pos || 'center', transition: 'transform 0.5s' }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 60%)' }} />
+                  <span style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.92)', color: '#111', fontWeight: 700, fontSize: 12, padding: '5px 12px', borderRadius: 999 }}>{pkgCount(dest.name)} package{pkgCount(dest.name) !== 1 ? 's' : ''}</span>
                   <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, textAlign: 'left' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
                       <MapPin size={13} style={{ color: dest.color }} />
@@ -190,6 +194,7 @@ export default function HomePage() {
         showAll={showAllHS}
         setShowAll={setShowAllHS}
         onSelect={name => selectListing('homestay', name)}
+        countFor={pkgCount}
         bg="#fff"
         defaultEmoji="🏡"
         defaultImg="https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&q=80"
@@ -206,6 +211,7 @@ export default function HomePage() {
         showAll={showAllHB}
         setShowAll={setShowAllHB}
         onSelect={name => selectListing('houseboat', name)}
+        countFor={pkgCount}
         bg="#f0ebe1"
         defaultEmoji="🛶"
         defaultImg="https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80"

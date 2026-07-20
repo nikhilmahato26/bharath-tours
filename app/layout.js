@@ -6,9 +6,9 @@ export const metadata = {
   description: 'Bharath Tours and Consultancy offers domestic and international tour packages, visa consultancy, flight booking, hotel booking, passport assistance, travel insurance, and customized holiday packages from Annamayya District, Andhra Pradesh.',
   keywords: 'Bharath Tours and Consultancy, Travel Agency Andhra Pradesh, Visa Consultancy Andhra Pradesh, International Tour Packages, Domestic Tour Packages, Flight Ticket Booking, Hotel Booking, Passport Assistance, Travel Insurance, Holiday Packages',
   icons: {
-    icon: '/logo.jpeg',
-    shortcut: '/logo.jpeg',
-    apple: '/logo.jpeg',
+    icon: '/brand-logo.jpeg',
+    shortcut: '/brand-logo.jpeg',
+    apple: '/brand-logo.jpeg',
   },
 }
 

@@ -33,7 +33,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 z-10 shrink-0">
              <div className="relative w-[60px] h-[60px]">
-               <Image src="/logo.jpeg" alt="Bharath Tours Logo" fill className="object-contain" />
+               <Image src="/brand-logo.jpeg" alt="Bharath Tours Logo" fill className="object-contain" />
              </div>
           </Link>
 

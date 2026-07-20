@@ -142,7 +142,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="relative w-[70px] h-[70px] mb-6">
-              <Image src="/logo.jpeg" alt="Bharath Tours Logo" fill className="object-contain object-left" />
+              <Image src="/brand-logo.jpeg" alt="Bharath Tours Logo" fill className="object-contain object-left" />
             </div>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
               Your trusted partner for memorable travel experiences and hassle-free visa processing.

@@ -1,206 +1,126 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import { ArrowRight, MessageCircle } from 'lucide-react'
-import { useWhatsapp } from '@/hooks/useSettings'
+import { useState, useEffect } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-const FALLBACK_SLIDES = [
-  {
-    tag: 'Based in Andhra Pradesh, India',
-    title: 'Your Trusted Travel',
-    highlight: '& Visa Partner',
-    tagline: 'Domestic & International Tour Packages',
-    desc: 'Visa Consultancy · Flight Booking · Hotel Booking · Customized Holidays · Group Tours from Annamayya District, Andhra Pradesh.',
-    images: [
-      'https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=900&q=85',
-      'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=600&q=85',
-      'https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=600&q=85',
-    ],
-  },
-  {
-    tag: 'International Tours',
-    title: 'Explore the World',
-    highlight: 'with Expert Guidance',
-    tagline: 'Customized Holiday Packages Worldwide',
-    desc: 'International holidays with visa assistance, flight booking, hotel reservations, and travel insurance — hassle-free from start to finish.',
-    images: [
-      'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=900&q=85',
-      'https://images.unsplash.com/photo-1513407030348-c983a97b98d8?w=600&q=85',
-      'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=600&q=85',
-    ],
-  },
-  {
-    tag: 'Visa Consultancy',
-    title: 'Professional Visa',
-    highlight: 'Consultancy Services',
-    tagline: 'Tourist · Business · Student Visa',
-    desc: 'Expert guidance for all types of visas with fast processing and transparent pricing. Passport assistance and travel insurance included.',
-    images: [
-      'https://images.unsplash.com/photo-1601607696985-8e1f0d0f9fb5?w=900&q=85',
-      'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=85',
-      'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&q=85',
-    ],
-  },
+const SLIDES = [
+  "https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?q=80&w=2000",
+  "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=2000",
+  "https://images.unsplash.com/photo-1506929562872-bb421503ef21?q=80&w=2000"
 ]
 
 export default function HeroSlider() {
-  const [slides] = useState(FALLBACK_SLIDES)
-  const [current, setCurrent] = useState(0)
-  const [animating, setAnimating] = useState(false)
-  const whatsapp = useWhatsapp()
-
-  const go = useCallback((idx) => {
-    if (animating) return
-    setAnimating(true)
-    setTimeout(() => {
-      setCurrent(idx)
-      setAnimating(false)
-    }, 380)
-  }, [animating])
-
-  const next = useCallback(() => go((current + 1) % slides.length), [current, go, slides.length])
+  const [search, setSearch] = useState('')
+  const [currentSlide, setCurrentSlide] = useState(0)
 
   useEffect(() => {
-    const t = setInterval(next, 6500)
-    return () => clearInterval(t)
-  }, [next])
+    const timer = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % SLIDES.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [])
 
-  const slide = slides[current]
+  const nextSlide = () => setCurrentSlide(p => (p + 1) % SLIDES.length)
+  const prevSlide = () => setCurrentSlide(p => (p - 1 + SLIDES.length) % SLIDES.length)
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   return (
-    <section style={{ background: '#fff', paddingTop: 64, minHeight: '92vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
-      <div className="hero-outer" style={{
-        maxWidth: 1280, margin: '0 auto',
-        padding: '52px 24px 60px',
-        width: '100%',
-        display: 'grid',
-        gridTemplateColumns: '55% 45%',
-        gap: 48,
-        alignItems: 'center',
-      }}>
+    <section className="relative h-[85vh] min-h-[600px] flex items-center justify-center pt-16 mt-[-64px] overflow-hidden">
+      {/* Background Images */}
+      {SLIDES.map((src, idx) => (
+        <div 
+          key={idx}
+          className={`absolute inset-0 z-0 transition-opacity duration-1000 ${currentSlide === idx ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <img
+            src={src}
+            alt={`Slide ${idx + 1}`}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/30"></div>
+        </div>
+      ))}
 
-        {/* ── Left: Text Content ── */}
-        <div style={{
-          opacity: animating ? 0 : 1,
-          transform: animating ? 'translateY(10px)' : 'translateY(0)',
-          transition: 'all 0.42s ease',
-        }}>
-          {/* Tag pill */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff5ef', border: '1px solid rgba(232,82,10,0.22)', borderRadius: 999, padding: '5px 16px', marginBottom: 24 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e8520a', flexShrink: 0 }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#e8520a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{slide.tag}</span>
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-6 flex flex-col items-center mt-20">
+        <h1 className="text-white font-display font-extrabold text-5xl md:text-7xl mb-8 text-center drop-shadow-lg tracking-tight">
+          Unleash Your Wanderlust
+        </h1>
+
+        {/* Search Bar Container */}
+        <form 
+          onSubmit={handleSearch}
+          className="w-full max-w-3xl bg-white/95 backdrop-blur-sm p-2 pl-6 rounded-full flex items-center shadow-2xl mb-16"
+        >
+          <div className="text-gray-400 mr-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
           </div>
+          <input
+            type="text"
+            placeholder="Search Your destinations here..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-transparent border-none outline-none text-gray-700 text-lg placeholder-gray-400 font-medium"
+          />
+          <button 
+            type="submit"
+            className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-lg px-10 py-3 rounded-full transition-colors ml-2 shadow-lg"
+          >
+            Find All
+          </button>
+        </form>
 
-          {/* Heading */}
-          <h1 style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 'clamp(2.2rem,5.5vw,4rem)', lineHeight: 1.05, color: '#111', marginBottom: 14 }}>
-            {slide.title}<br />
-            <span style={{ color: '#e8520a' }}>{slide.highlight}</span>
-          </h1>
-
-          {/* Tagline */}
-          <p style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 10, lineHeight: 1.4 }}>{slide.tagline}</p>
-
-          {/* Description */}
-          <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.75, marginBottom: 36, maxWidth: 460 }}>{slide.desc}</p>
-
-          {/* CTA buttons */}
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 44 }}>
-            <a href="#packages"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 999, background: '#e8520a', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 8px 28px rgba(232,82,10,0.35)', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#c93d00'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(232,82,10,0.45)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#e8520a'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(232,82,10,0.35)' }}>
-              Book Now <ArrowRight size={15} />
-            </a>
-            <a href={`https://wa.me/${whatsapp}?text=Hi! I want to book a tour or get visa assistance!`}
-              target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 999, background: '#fff', border: '1.5px solid #e5e7eb', color: '#374151', fontWeight: 700, fontSize: 14, textDecoration: 'none', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.background = '#f9fafb' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.background = '#fff' }}>
-              <MessageCircle size={15} style={{ color: '#25d366' }} /> WhatsApp Us
-            </a>
+        {/* Stats Row */}
+        <div className="flex flex-wrap justify-center gap-12 md:gap-24 text-center">
+          <div className="flex flex-col items-center">
+            <span className="text-amber-400 font-bold text-3xl md:text-4xl mb-1 font-display drop-shadow-md">650+</span>
+            <span className="text-white font-medium text-sm md:text-base tracking-wide uppercase text-white/90 drop-shadow-md">Destinations</span>
           </div>
-
-          {/* Stats row */}
-          <div style={{ display: 'flex', gap: 36, marginBottom: 32 }}>
-            {[['500+', 'Happy Clients'], ['16+', 'Services'], ['5 ★', 'Rating']].map(([num, label]) => (
-              <div key={label}>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 22, fontWeight: 800, color: '#111', lineHeight: 1 }}>{num}</div>
-                <div style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500, marginTop: 5 }}>{label}</div>
-              </div>
-            ))}
+          <div className="flex flex-col items-center">
+            <span className="text-amber-400 font-bold text-3xl md:text-4xl mb-1 font-display drop-shadow-md">850+</span>
+            <span className="text-white font-medium text-sm md:text-base tracking-wide uppercase text-white/90 drop-shadow-md">Tours / Packages</span>
           </div>
-
-          {/* Slide dots */}
-          <div style={{ display: 'flex', gap: 6 }}>
-            {slides.map((_, i) => (
-              <button key={i} onClick={() => go(i)}
-                style={{ height: 5, borderRadius: 999, width: i === current ? 28 : 5, background: i === current ? '#e8520a' : '#d1d5db', border: 'none', cursor: 'pointer', transition: 'all 0.35s ease', padding: 0 }} />
-            ))}
+          <div className="flex flex-col items-center">
+            <span className="text-amber-400 font-bold text-3xl md:text-4xl mb-1 font-display drop-shadow-md">500+</span>
+            <span className="text-white font-medium text-sm md:text-base tracking-wide uppercase text-white/90 drop-shadow-md">Happy Clients</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-amber-400 font-bold text-3xl md:text-4xl mb-1 font-display drop-shadow-md">16+</span>
+            <span className="text-white font-medium text-sm md:text-base tracking-wide uppercase text-white/90 drop-shadow-md">Years Experience</span>
           </div>
         </div>
 
-        {/* ── Right: 3-Image Mosaic ── */}
-        <div className="hero-mosaic" style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gridTemplateRows: '1fr 1fr',
-          gap: 14,
-          height: 500,
-          opacity: animating ? 0.65 : 1,
-          transition: 'opacity 0.42s ease',
-        }}>
-          {/* Tall left image spans 2 rows */}
-          <div style={{ gridRow: '1 / 3', borderRadius: 24, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.16)' }}>
-            <img src={slide.images[0]} alt="Travel Destination"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.7s ease' }}
-              onMouseEnter={e => e.target.style.transform = 'scale(1.04)'}
-              onMouseLeave={e => e.target.style.transform = 'scale(1)'}
-            />
-          </div>
-
-          {/* Top-right */}
-          <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}>
-            <img src={slide.images[1]} alt="Travel"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.7s ease' }}
-              onMouseEnter={e => e.target.style.transform = 'scale(1.06)'}
-              onMouseLeave={e => e.target.style.transform = 'scale(1)'}
-            />
-          </div>
-
-          {/* Bottom-right with stats overlay */}
-          <div style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.1)', position: 'relative' }}>
-            <img src={slide.images[2]} alt="Travel"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.7s ease' }}
-              onMouseEnter={e => e.target.style.transform = 'scale(1.06)'}
-              onMouseLeave={e => e.target.style.transform = 'scale(1)'}
-            />
-            {/* Stats chip */}
-            <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderRadius: 14, padding: '12px 16px', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 17, fontWeight: 800, color: '#e8520a', lineHeight: 1 }}>500+</div>
-                <div style={{ fontSize: 10, color: '#6b7280', marginTop: 3, fontWeight: 500 }}>Happy Clients</div>
-              </div>
-              <div style={{ width: 1, height: 28, background: '#e5e7eb' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 17, fontWeight: 800, color: '#e8520a', lineHeight: 1 }}>50+</div>
-                <div style={{ fontSize: 10, color: '#6b7280', marginTop: 3, fontWeight: 500 }}>Destinations</div>
-              </div>
-            </div>
-          </div>
+        {/* Floating Arrows */}
+        <div 
+          onClick={prevSlide}
+          className="absolute top-1/2 left-4 md:-left-12 -translate-y-1/2 w-12 h-12 rounded-full border-2 border-white/30 flex items-center justify-center text-white cursor-pointer hover:bg-white/20 transition-all backdrop-blur-sm z-20"
+        >
+           <ChevronLeft size={24} />
+        </div>
+        <div 
+          onClick={nextSlide}
+          className="absolute top-1/2 right-4 md:-right-12 -translate-y-1/2 w-12 h-12 rounded-full border-2 border-white/30 flex items-center justify-center text-white cursor-pointer hover:bg-white/20 transition-all backdrop-blur-sm z-20"
+        >
+           <ChevronRight size={24} />
         </div>
       </div>
-
-      {/* Decorative airplane accent */}
-      <div style={{ position: 'absolute', right: '18%', top: '30%', fontSize: 32, opacity: 0.06, transform: 'rotate(25deg)', pointerEvents: 'none', userSelect: 'none' }}>✈</div>
-
-      <style>{`
-        @media (max-width: 900px) {
-          .hero-outer { grid-template-columns: 1fr !important; padding: 36px 20px 52px !important; min-height: auto !important; gap: 36px !important; }
-          .hero-mosaic { height: 320px !important; }
-        }
-        @media (max-width: 600px) {
-          .hero-mosaic { display: none !important; }
-        }
-      `}</style>
+      
+      {/* Bottom slide indicators */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+        {SLIDES.map((_, idx) => (
+          <button 
+            key={idx}
+            onClick={() => setCurrentSlide(idx)}
+            className={`transition-all duration-300 rounded-full ${currentSlide === idx ? 'w-8 h-2 bg-amber-500' : 'w-2 h-2 bg-white/40 hover:bg-white/60'}`}
+            aria-label={`Go to slide ${idx + 1}`}
+          />
+        ))}
+      </div>
     </section>
   )
 }

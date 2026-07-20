@@ -1,84 +1,83 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { Phone, Clock, MapPin, Tag } from 'lucide-react'
+import { Phone, Clock, MapPin, Share2 } from 'lucide-react'
 
 function formatPrice(n) {
   return '₹' + Number(n).toLocaleString('en-IN')
 }
-function savings(orig, sale) {
-  return formatPrice(orig - sale)
-}
 
 export default function PackageCard({ pkg, phone = '919846034558' }) {
-  const save = savings(pkg.originalPrice, pkg.salePrice)
   const router = useRouter()
 
   return (
     <div
-      className="h-full flex flex-col transition-all duration-300 cursor-pointer"
-      style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.06)', textDecoration: 'none' }}
+      className="h-full flex flex-col bg-white rounded-[24px] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.12)] hover:-translate-y-1.5 transition-all duration-300 cursor-pointer border border-gray-100"
       onClick={() => router.push(`/packages/${pkg.id}`)}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.15)' }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)' }}
     >
-        {/* Image */}
-        <div style={{ position: 'relative', height: 200, overflow: 'hidden' }}>
-          <img
-            src={pkg.image}
-            alt={pkg.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: pkg.imagePos || 'center', transition: 'transform 0.5s ease' }}
-            onError={e => { e.target.src = 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=700&q=80' }}
-          />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.25), transparent)' }} />
-          <div style={{ position: 'absolute', top: 12, left: 12 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 999, background: pkg.badgeColor + 'dd', color: '#fff', fontSize: 11, fontWeight: 600, backdropFilter: 'blur(8px)' }}>
-              <MapPin size={9} /> {pkg.destination}
-            </span>
-          </div>
-          <div style={{ position: 'absolute', top: 12, right: 12 }}>
-            <span style={{ padding: '4px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.92)', color: '#555', fontSize: 11, fontWeight: 500, backdropFilter: 'blur(8px)' }}>
-              {pkg.badge}
-            </span>
+      {/* Image Section */}
+      <div className="relative h-[220px] overflow-hidden">
+        <img
+          src={pkg.image}
+          alt={pkg.title}
+          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=700&q=80' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+        
+        {/* Badges */}
+        <div className="absolute top-4 left-4 flex gap-2">
+          <span className="bg-white/90 backdrop-blur-md text-gray-800 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm">
+            {pkg.badge || 'Popular'}
+          </span>
+        </div>
+        <div className="absolute top-4 right-4 flex gap-2">
+           <span className="bg-amber-100 text-amber-700 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm">
+             {pkg.duration}
+           </span>
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-center gap-1.5 text-gray-400 text-[12px] font-medium mb-2">
+          <Clock size={14} className="text-gray-400" />
+          <span>{pkg.duration}</span>
+        </div>
+        
+        <h3 className="font-bold text-[17px] text-gray-900 mb-2 leading-snug line-clamp-2">{pkg.title}</h3>
+        
+        <div className="flex items-center gap-1.5 text-gray-500 text-[13px] mb-4">
+          <MapPin size={14} className="text-gray-400" />
+          <span>{pkg.destination}</span>
+        </div>
+
+        <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+          <div>
+             <div className="text-[11px] text-gray-400 font-medium uppercase tracking-wide">Price</div>
+             <div className="flex items-baseline gap-1">
+               <span className="text-[22px] font-extrabold text-gray-900">{formatPrice(pkg.salePrice)}</span>
+               {pkg.originalPrice > pkg.salePrice && (
+                 <span className="text-[13px] text-red-400 line-through font-medium ml-1">
+                   {formatPrice(pkg.originalPrice)}
+                 </span>
+               )}
+             </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: '18px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#9ca3af', fontSize: 12, marginBottom: 8 }}>
-            <Clock size={12} />
-            <span>{pkg.duration}</span>
-          </div>
-          <h3 style={{ fontWeight: 700, fontSize: 17, color: '#111827', marginBottom: 4, lineHeight: 1.3 }}>{pkg.title}</h3>
-          <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>{pkg.subtitle}</p>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px', background: '#f5f0e8', borderRadius: 999, fontSize: 11, color: '#6b7280', marginBottom: 16, width: 'fit-content' }}>
-            <Tag size={10} />
-            {pkg.hotels}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 'auto' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                <span style={{ fontSize: 12, color: '#9ca3af', textDecoration: 'line-through' }}>{formatPrice(pkg.originalPrice)}</span>
-                <span style={{ fontSize: 11, fontWeight: 600, background: '#dcfce7', color: '#15803d', padding: '2px 7px', borderRadius: 999 }}>SAVE {save}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                <span style={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>{formatPrice(pkg.salePrice)}</span>
-                <span style={{ fontSize: 11, color: '#9ca3af' }}>/{pkg.priceNote}</span>
-              </div>
-            </div>
-            <a
-              href={`tel:+${phone}`}
-              onClick={e => e.stopPropagation()}
-              style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', flexShrink: 0 }}
-            >
-              <Phone size={16} />
-            </a>
-          </div>
-
-          <button style={{ marginTop: 14, width: '100%', padding: '12px 0', borderRadius: 999, fontWeight: 600, fontSize: 14, color: '#fff', background: 'linear-gradient(135deg, #e8520a, #c93d00)', border: 'none', cursor: 'pointer' }}>
+        {/* Action Buttons Row */}
+        <div className="flex gap-3 mt-4">
+          <button 
+            onClick={e => { e.stopPropagation(); window.open(`tel:+${phone}`, '_self') }}
+            className="w-12 h-12 shrink-0 rounded-xl border-2 border-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-amber-500 transition-colors"
+          >
+            <Phone size={20} />
+          </button>
+          <button className="flex-1 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white font-bold text-[15px] transition-colors shadow-sm shadow-red-500/30">
             View Details
           </button>
         </div>
+      </div>
     </div>
   )
 }

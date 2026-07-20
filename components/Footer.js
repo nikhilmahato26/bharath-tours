@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Phone, Mail, MessageCircle, MapPin } from 'lucide-react'
 import { usePhone, useWhatsapp, useEmail } from '@/hooks/useSettings'
+import Image from 'next/image'
 
 function IgIcon() {
   return (
@@ -21,25 +22,12 @@ function FbIcon() {
   )
 }
 
-const SERVICES = [
-  'Domestic Tour Packages',
-  'International Tour Packages',
-  'Visa Consultancy',
-  'Flight Ticket Booking',
-  'Hotel Booking',
-  'Honeymoon Packages',
-  'Group Tours',
-  'Travel Insurance',
-  'Passport Assistance',
-  'Customized Holidays',
-]
-
 const QUICK_LINKS = [
   ['Home',         '/'],
+  ['About Us',     '/#about'],
   ['Destinations', '/#destinations'],
-  ['Services',     '/#services'],
   ['Packages',     '/#packages'],
-  ['About',        '/#about'],
+  ['Deals',        '/#deals'],
   ['Contact',      '/#contact'],
 ]
 
@@ -61,165 +49,183 @@ export default function Footer() {
   useEffect(() => {
     fetch('/api/destinations')
       .then(r => r.ok ? r.json() : [])
-      .then(dests => setFooterDests(dests.filter(d => d.featured !== false).slice(0, 7)))
+      .then(dests => setFooterDests(dests.filter(d => d.featured !== false).slice(0, 6)))
       .catch(() => {})
   }, [])
 
   const displayDests = footerDests.length > 0 ? footerDests : FALLBACK_DESTS
 
   return (
-    <footer style={{ background: '#08091a', color: '#fff' }}>
-
-      {/* Main footer content */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '64px 24px 0' }}>
-        <div className="footer-grid">
-
-          {/* Brand column */}
+    <footer id="contact" className="bg-[#0f172a] text-white pt-20 mt-16">
+      <div className="max-w-[1400px] mx-auto px-6">
+        
+        {/* Contact Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-20">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div style={{ width: 34, height: 34, background: 'linear-gradient(135deg,#e8520a,#c93d00)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>✈️</div>
-              <div>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 12, color: '#fff', letterSpacing: '0.05em', textTransform: 'uppercase', lineHeight: 1.15 }}>Bharath Tours</div>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontWeight: 600, fontSize: 9.5, color: '#e8520a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>& Consultancy</div>
-              </div>
-            </div>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, marginBottom: 22, maxWidth: 260 }}>
-              Trusted travel agency & visa consultancy from Annamayya District, Andhra Pradesh. Domestic & international tours, visa assistance, and more.
+            <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-3">Get in Touch</p>
+            <h2 className="font-display font-extrabold text-4xl md:text-5xl leading-[1.1] mb-6">
+              Plan Your Dream<br/>Journey Today
+            </h2>
+            <p className="text-gray-400 leading-relaxed mb-8 text-[15px] max-w-md">
+              Whether you're looking for the perfect honeymoon package, a family adventure, or seamless visa processing, our team is ready to assist you.
             </p>
-            {/* Socials */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
+            
+            <div className="flex flex-col gap-6 mb-10">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-white/5 text-amber-400 flex items-center justify-center shrink-0">
+                  <MapPin size={20} />
+                </div>
+                <div>
+                  <p className="text-gray-300 text-sm leading-relaxed">
+                    Near Opposite to Shivaliyam,<br />Ananthampalli, Redipalli,<br />Pullempeta Mandal, Annamayya District,<br />Andhra Pradesh – 516107
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-white/5 text-amber-400 flex items-center justify-center shrink-0">
+                  <Phone size={20} />
+                </div>
+                <a href={`tel:+${phone}`} className="text-gray-300 hover:text-amber-400 transition-colors">+{phone}</a>
+              </div>
+              {email && (
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/5 text-amber-400 flex items-center justify-center shrink-0">
+                    <Mail size={20} />
+                  </div>
+                  <a href={`mailto:${email}`} className="text-gray-300 hover:text-amber-400 transition-colors">{email}</a>
+                </div>
+              )}
+            </div>
+
+            <a href={`https://wa.me/${whatsapp}?text=Hi! I want to book a tour or get visa assistance!`} target="_blank" rel="noopener noreferrer" className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-3.5 rounded-full shadow-lg shadow-green-500/30 transition-all inline-flex items-center gap-2">
+              <MessageCircle size={20} /> Chat on WhatsApp
+            </a>
+          </div>
+
+          {/* Contact Form */}
+          <div className="bg-white/5 rounded-3xl p-8 md:p-10 border border-white/10">
+            <h3 className="font-display font-bold text-2xl mb-8">Send Us a Message</h3>
+            <form className="flex flex-col gap-5">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                 <div className="flex flex-col gap-2">
+                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Name</label>
+                   <input type="text" placeholder="John Doe" className="bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors" />
+                 </div>
+                 <div className="flex flex-col gap-2">
+                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Email</label>
+                   <input type="email" placeholder="john@example.com" className="bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors" />
+                 </div>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                 <div className="flex flex-col gap-2">
+                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Phone Number</label>
+                   <input type="text" placeholder="+91 xxxxx xxxxx" className="bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors" />
+                 </div>
+                 <div className="flex flex-col gap-2">
+                   <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Destination</label>
+                   <input type="text" placeholder="Where do you want to go?" className="bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors" />
+                 </div>
+               </div>
+               <div className="flex flex-col gap-2">
+                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Message</label>
+                 <textarea rows="4" placeholder="Tell us about your requirements..." className="bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors resize-none"></textarea>
+               </div>
+               <button type="button" className="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold text-lg py-4 rounded-xl mt-2 transition-colors">
+                 Send Message
+               </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Footer Links Area */}
+        <div className="border-t border-white/10 pt-16 pb-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+          {/* Brand */}
+          <div>
+            <div className="relative w-[70px] h-[70px] mb-6">
+              <Image src="/logo.jpeg" alt="Bharath Tours Logo" fill className="object-contain object-left" />
+            </div>
+            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+              Your trusted partner for memorable travel experiences and hassle-free visa processing.
+            </p>
+            <div className="flex gap-3">
               {[
                 { href: 'https://instagram.com/', icon: <IgIcon />, label: 'Instagram' },
                 { href: 'https://facebook.com/',  icon: <FbIcon />, label: 'Facebook' },
-                { href: `https://wa.me/${whatsapp}`, icon: <MessageCircle size={15} />, label: 'WhatsApp' },
               ].map(s => (
                 <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label}
-                  style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#e8520a'; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}>
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-amber-500 hover:text-white transition-colors">
                   {s.icon}
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Services column */}
+          {/* Quick Links */}
           <div>
-            <h4 style={{ fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 18 }}>Our Services</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {SERVICES.map(s => (
-                <li key={s}>
-                  <Link href="/#packages"
-                    className="hover:text-orange-400 transition-colors"
-                    style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
-                    {s}
+            <h4 className="font-bold text-lg mb-6">Quick Links</h4>
+            <ul className="flex flex-col gap-3">
+              {QUICK_LINKS.map(([label, href]) => (
+                <li key={label}>
+                  <Link href={href} className="text-gray-400 hover:text-amber-400 transition-colors text-sm flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Destinations column */}
+          {/* Destinations */}
           <div>
-            <h4 style={{ fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 18 }}>Destinations</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <h4 className="font-bold text-lg mb-6">Top Destinations</h4>
+            <ul className="flex flex-col gap-3">
               {displayDests.map(d => (
                 <li key={d.id}>
-                  <Link href="/#packages"
-                    className="hover:text-orange-400 transition-colors"
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
-                    <MapPin size={10} style={{ flexShrink: 0 }} /> {d.name}
+                  <Link href="/#packages" className="text-gray-400 hover:text-amber-400 transition-colors text-sm flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {d.name}
                   </Link>
                 </li>
               ))}
             </ul>
-
-            <div style={{ marginTop: 28 }}>
-              <h4 style={{ fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 18 }}>Quick Links</h4>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {QUICK_LINKS.map(([label, href]) => (
-                  <li key={label}>
-                    <Link href={href}
-                      className="hover:text-orange-400 transition-colors"
-                      style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
 
-          {/* Contact column */}
+          {/* Contact Info */}
           <div>
-            <h4 style={{ fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 18 }}>Contact Us</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <li>
-                <a href={`tel:+${phone}`}
-                  className="hover:text-orange-400 transition-colors"
-                  style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
-                  <Phone size={13} style={{ flexShrink: 0 }} /> +{phone}
-                </a>
-              </li>
-              {email && (
+             <h4 className="font-bold text-lg mb-6">Contact Info</h4>
+             <ul className="flex flex-col gap-4">
                 <li>
-                  <a href={`mailto:${email}`}
-                    className="hover:text-orange-400 transition-colors"
-                    style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
-                    <Mail size={13} style={{ flexShrink: 0 }} /> {email}
+                  <a href={`tel:+${phone}`} className="flex items-start gap-3 text-gray-400 hover:text-amber-400 transition-colors text-sm">
+                    <Phone size={16} className="mt-0.5 shrink-0" /> +{phone}
                   </a>
                 </li>
-              )}
-              <li>
-                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer"
-                  className="hover:text-green-400 transition-colors"
-                  style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
-                  <MessageCircle size={13} style={{ flexShrink: 0 }} /> WhatsApp Us
-                </a>
-              </li>
-              <li>
-                <span style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13, color: 'rgba(255,255,255,0.35)', lineHeight: 1.7 }}>
-                  <MapPin size={13} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span>
-                    Near Opposite to Shivaliyam,<br />
-                    Ananthampalli, Redipalli,<br />
-                    Pullempeta Mandal,<br />
-                    Annamayya District,<br />
-                    Andhra Pradesh – 516107
-                  </span>
-                </span>
-              </li>
-            </ul>
+                {email && (
+                  <li>
+                    <a href={`mailto:${email}`} className="flex items-start gap-3 text-gray-400 hover:text-amber-400 transition-colors text-sm">
+                      <Mail size={16} className="mt-0.5 shrink-0" /> {email}
+                    </a>
+                  </li>
+                )}
+                <li>
+                   <div className="flex items-start gap-3 text-gray-400 text-sm">
+                      <MapPin size={16} className="mt-0.5 shrink-0" />
+                      <span>Annamayya District, AP – 516107</span>
+                   </div>
+                </li>
+             </ul>
           </div>
         </div>
       </div>
 
-      {/* Bottom bar */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.22)', margin: 0 }}>
-            © {new Date().getFullYear()} Bharath Tours and Consultancy. All rights reserved.
-          </p>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.22)', margin: 0 }}>
-            Made with ❤️ for travellers
-          </p>
-        </div>
+      {/* Bottom Bar */}
+      <div className="border-t border-white/5 py-6">
+         <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-gray-500 text-sm">
+              © {new Date().getFullYear()} Bharath Tours and Consultancy. All rights reserved.
+            </p>
+            <p className="text-gray-500 text-sm">
+              Made with <span className="text-red-500">❤️</span> for travellers
+            </p>
+         </div>
       </div>
-
-      <style>{`
-        .footer-grid {
-          display: grid;
-          grid-template-columns: 2fr 1.5fr 1.5fr 1.7fr;
-          gap: 40px;
-          margin-bottom: 48px;
-        }
-        @media (max-width: 900px) {
-          .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
-        }
-        @media (max-width: 480px) {
-          .footer-grid { grid-template-columns: 1fr; }
-        }
-      `}</style>
     </footer>
   )
 }

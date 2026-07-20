@@ -5,7 +5,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
-        display: ['Syne', 'sans-serif'],
+        display: ['Playfair Display', 'serif'],
       },
       colors: {
         saffron: { 50:'#fff7f0', 100:'#ffe4cc', 200:'#ffc999', 300:'#ffad66', 400:'#ff8533', 500:'#e8520a', DEFAULT:'#e8520a', 600:'#cc4400', 700:'#993300', 800:'#662200', 900:'#331100' },

@@ -279,7 +279,7 @@ export default function AgencyDashboard() {
         <div style={S.topbarInner}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Agency Dashboard</div>
-            <div style={{ fontSize: 11, color: '#9ca3af' }}>Green Kerala Trips</div>
+            <div style={{ fontSize: 11, color: '#9ca3af' }}>Bharath Tours and Consultancy</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <Link href="/" target="_blank" style={{ ...S.btn('#f3f4f6', '#555'), textDecoration: 'none' }}>

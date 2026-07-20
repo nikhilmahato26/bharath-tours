@@ -670,11 +670,11 @@ export default function Dashboard() {
         <div style={S.topbarInner}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 40, height: 40, overflow: 'hidden', flexShrink: 0 }}>
-              <Image src="https://res.cloudinary.com/dynbpb9u0/image/upload/v1779855779/WhatsApp_Image_2026-05-22_at_15.06.01-removebg-preview_mr6pdc.png" alt="Green Kerala Trips" width={40} height={40} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <Image src="https://res.cloudinary.com/dynbpb9u0/image/upload/v1779855779/WhatsApp_Image_2026-05-22_at_15.06.01-removebg-preview_mr6pdc.png" alt="Bharath Tours and Consultancy" width={40} height={40} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 14, color: '#111', lineHeight: 1 }}>Admin Dashboard</div>
-              <div style={{ fontSize: 11, color: '#9ca3af' }}>Green Kerala Trips</div>
+              <div style={{ fontSize: 11, color: '#9ca3af' }}>Bharath Tours and Consultancy</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>

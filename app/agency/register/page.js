@@ -117,7 +117,7 @@ export default function AgencyRegisterPage() {
             </div>
             <div>
               <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: 22, color: '#fff', margin: 0 }}>Join as Agency</h1>
-              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, margin: 0 }}>Partner with us to list your Kerala packages</p>
+              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, margin: 0 }}>Partner with us to list your travel packages</p>
             </div>
           </div>
         </div>
